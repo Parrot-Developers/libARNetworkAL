@@ -8,8 +8,9 @@ HEADER_FILES                                                =   ../Includes/libA
                                                                 ../Includes/libARNetwork_OSSpecific/ARNETWORK_OSSPECIFIC_Error.h
 
 # The sources to add to the library and to add to the source distribution
-SOURCE_FILES                                                =   $(HEADER_FILES)                                 \
-                                                                ../Sources/ARNETWORK_OSSPECIFIC_Manager.c       \
+SOURCE_FILES                                                =   $(HEADER_FILES)                                 	\
+                                                                ../Sources/Wifi/ARNETWORK_OSSPECIFIC_WifiNetwork.c	\
+                                                                ../Sources/ARNETWORK_OSSPECIFIC_Manager.c       	\
                                                                 ../Sources/ARNETWORK_OSSPECIFIC_Error.c
 
 # The library names to build (note we are building static and shared libs)
