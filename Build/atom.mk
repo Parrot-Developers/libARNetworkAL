@@ -6,14 +6,14 @@ ifneq ("$(TARGET_LIBC)","bionic")
 include $(CLEAR_VARS)
 
 LOCAL_CATEGORY_PATH := mykonos3/libs
-LOCAL_MODULE := libARNetwork_OSSpecific
+LOCAL_MODULE := libARNetworkAL
 LOCAL_DESCRIPTION := ARSDK Network Control Library for Specific OS
 
 LOCAL_LIBRARIES := libARSAL
-LOCAL_EXPORT_LDLIBS := -larnetwork_osspecific
+LOCAL_EXPORT_LDLIBS := -larnetworkal
 
 #Autotools variables
-LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --with-libARNetworkOSSpecificInstallDir=""
+LOCAL_AUTOTOOLS_CONFIGURE_ARGS := --with-libARNetworkALInstallDir=""
 
 # User define command to be launch before configure step.
 # Generates files used by configure
