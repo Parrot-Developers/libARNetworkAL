@@ -106,10 +106,6 @@ fi
 
 CPPFLAGS="$CFLAGS"
 
-AC_LANG_PUSH([Objective C])
-OBJCFLAGS+=" -std=gnu99 $CFLAGS"
-AC_LANG_POP([Objective C])
-
 ##########################################################################
 # Define binaries directories
 ##########################################################################
@@ -121,9 +117,9 @@ fi
 
 ##########################################################################
 # Checks for programs.
-AC_PROG_OBJC
 AC_PROG_CC
 AC_PROG_LIBTOOL
+AC_PROG_OBJC
 
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
 m4_include(doxygen.ac)
@@ -153,6 +149,7 @@ libARSAL/ARSAL_Socket.h libARSAL/ARSAL_Time.h],,
 
 # Check for CoreBluetooth.h
 AC_LANG_PUSH([Objective C])
+OBJCFLAGS+=" -std=gnu99 $CFLAGS"
 if test x$ac_cv_objc_compiler_gnu = xyes; then
     AC_CHECK_HEADERS([CoreBluetooth/CoreBluetooth.h], ,
         AC_MSG_WARN(The CoreBluetooth headers are required to use bluetooth features ! ))
@@ -160,7 +157,6 @@ fi
 
 AM_CONDITIONAL([HAVE_COREBLUETOOTH], [test x"$ac_cv_header_CoreBluetooth_CoreBluetooth_h" = x"yes"])
 AC_LANG_POP([Objective C])
-
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
