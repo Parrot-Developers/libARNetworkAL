@@ -120,28 +120,6 @@ if test ! -z $libARSALLibDir; then
 fi
 
 ##########################################################################
-# Check headers
-##########################################################################
-
-# Checks for libSAL.h
-AC_CHECK_HEADERS([libARSAL/ARSAL_Print.h libARSAL/ARSAL_Thread.h libARSAL/ARSAL_Mutex.h \
-libARSAL/ARSAL_Socket.h libARSAL/ARSAL_Time.h],,
-	AC_MSG_ERROR(The libARSAL headers are required in order to build the library !
-- Use --with-libARSALInstallDir of --with-libARSALIncludeDir to indicate a specific include path.))
-
-
-# Check for CoreBluetooth.h
-AC_LANG_PUSH([Objective C])
-# Checks for CoreBluetooth/CoreBluetooth.h
-if test x"$ac_cv_objc_compiler_gnu" = x"yes" ; then
-AC_CHECK_HEADERS([CoreBluetooth/CoreBluetooth.h], , 
-	AC_MSG_WARN(The CoreBluetooth headers are required to use bluetooth features ! ))
-fi
-
-AM_CONDITIONAL([HAVE_COREBLUETOOTH], [test x"$ac_cv_header_CoreBluetooth_CoreBluetooth_h" = x"yes"])
-AC_LANG_POP([Objective C])
-
-##########################################################################
 # Checks for programs.
 AC_PROG_OBJC
 AC_PROG_CC
@@ -162,6 +140,27 @@ AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
 
 # Checks for header files.
 AC_HEADER_STDC
+
+##########################################################################
+# Check headers
+##########################################################################
+# Checks for libSAL.h
+AC_CHECK_HEADERS([libARSAL/ARSAL_Print.h libARSAL/ARSAL_Thread.h libARSAL/ARSAL_Mutex.h \
+libARSAL/ARSAL_Socket.h libARSAL/ARSAL_Time.h],,
+	AC_MSG_ERROR(The libARSAL headers are required in order to build the library !
+- Use --with-libARSALInstallDir of --with-libARSALIncludeDir to indicate a specific include path.))
+
+
+# Check for CoreBluetooth.h
+AC_LANG_PUSH([Objective C])
+if test x$ac_cv_objc_compiler_gnu = xyes; then
+    AC_CHECK_HEADERS([CoreBluetooth/CoreBluetooth.h], ,
+        AC_MSG_WARN(The CoreBluetooth headers are required to use bluetooth features ! ))
+fi
+
+AM_CONDITIONAL([HAVE_COREBLUETOOTH], [test x"$ac_cv_header_CoreBluetooth_CoreBluetooth_h" = x"yes"])
+AC_LANG_POP([Objective C])
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -190,6 +189,7 @@ echo "
   $PACKAGE_NAME version $PACKAGE_VERSION
   Prefix.........: $prefix
   Debug Build....: $debugit
+  Objc Compiler..: $ac_cv_objc_compiler_gnu
   C Compiler.....: $CC $CFLAGS
   Linker.........: $LD $LDFLAGS $LIBS
   Doxygen........: ${DOXYGEN:-NONE}
