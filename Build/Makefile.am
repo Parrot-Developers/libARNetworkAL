@@ -33,7 +33,7 @@ libarnetworkal_la_SOURCES                          =   $(SOURCE_FILES)
 endif
 
 CLEAN_FILES                                        =   libarnetworkal.la       \
-                                                                libarnetworkal_dbg.la
+                                                       libarnetworkal_dbg.la
 
 EXTRA_DIST                                         =   bootstrap
 

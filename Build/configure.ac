@@ -105,6 +105,11 @@ if test ! -z $libARSALIncludeDir; then
 fi
 
 CPPFLAGS="$CFLAGS"
+
+AC_LANG_PUSH([Objective C])
+OBJCFLAGS+=" -std=gnu99 $CFLAGS"
+AC_LANG_POP([Objective C])
+
 ##########################################################################
 # Define binaries directories
 ##########################################################################
@@ -124,17 +129,21 @@ libARSAL/ARSAL_Socket.h libARSAL/ARSAL_Time.h],,
 	AC_MSG_ERROR(The libARSAL headers are required in order to build the library !
 - Use --with-libARSALInstallDir of --with-libARSALIncludeDir to indicate a specific include path.))
 
-AC_LANG_PUSH([Objective C])
-OBJCFLAGS+=" -std=gnu99 $CFLAGS"
 
+# Check for CoreBluetooth.h
+AC_LANG_PUSH([Objective C])
 # Checks for CoreBluetooth/CoreBluetooth.h
+if test x"$ac_cv_objc_compiler_gnu" = x"yes" ; then
 AC_CHECK_HEADERS([CoreBluetooth/CoreBluetooth.h], , 
 	AC_MSG_WARN(The CoreBluetooth headers are required to use bluetooth features ! ))
+fi
+
 AM_CONDITIONAL([HAVE_COREBLUETOOTH], [test x"$ac_cv_header_CoreBluetooth_CoreBluetooth_h" = x"yes"])
 AC_LANG_POP([Objective C])
 
 ##########################################################################
 # Checks for programs.
+AC_PROG_OBJC
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
@@ -159,7 +168,7 @@ AC_TYPE_SIZE_T
 
 # Generate libtool version info number
 if test x"$sover" = x"yes"; then
-	LDFLAGS+=" -release $PACKAGE_VERSION"
+    LDFLAGS+=" -release $PACKAGE_VERSION"
 else
     LDFLAGS+=" -avoid-version"
 fi
@@ -168,7 +177,7 @@ fi
 # --> set these variables instead of CFLAGS or LDFLAGS
 AC_SUBST([CFLAGS])
 AC_SUBST([LDFLAGS])
-AC_SUBST([OBCJFLAGS])
+AC_SUBST([OBJCFLAGS])
 
 # Checks for library functions.
 
@@ -181,9 +190,7 @@ echo "
   $PACKAGE_NAME version $PACKAGE_VERSION
   Prefix.........: $prefix
   Debug Build....: $debugit
-  Core bluetooth.: $ac_cv_header_CoreBluetooth_CoreBluetooth_h
   C Compiler.....: $CC $CFLAGS
-  ObjC Compiler..: $CC $OBJCFLAGS
   Linker.........: $LD $LDFLAGS $LIBS
   Doxygen........: ${DOXYGEN:-NONE}
 "
