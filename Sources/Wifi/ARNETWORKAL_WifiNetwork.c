@@ -138,8 +138,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
     {
 		if (manager->senderObject)
 		{
-			ARSAL_Socket_Close(*(int *)manager->senderObject);
-
+            ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket);
+ 
 			if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer)
 			{
 			    free (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer);
@@ -152,7 +152,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
 
 		if(manager->senderObject)
 		{
-			ARSAL_Socket_Close(*(int *)manager->receiverObject);
+			ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket);
 
 			if(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer)
 			{

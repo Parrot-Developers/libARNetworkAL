@@ -8,7 +8,7 @@
 #ifndef _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 #define _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 
-#include "ARNETWORKAL_WifiNetwork.h"
+#include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
 /**
  *  @brief Create a new WifiNetwork object.
