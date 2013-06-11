@@ -5,10 +5,10 @@
  *  @author frederic.dhaeyer@parrot.com
  */
 
-#ifndef _NETWORK_ARNETWORKAL_WIFINETWORK_PRIVATE_H_
-#define _NETWORK_ARNETWORKAL_WIFINETWORK_PRIVATE_H_
+#ifndef _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
+#define _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 
-#include "ARNETWORKAL_Manager.h"
+#include "ARNETWORKAL_WifiNetwork.h"
 
 /**
  *  @brief Create a new WifiNetwork object.
@@ -76,5 +76,5 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_sendingCallback(ARN
  **/
 eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_receivingCallback(ARNETWORKAL_Manager_t *manager);
 
-#endif /** _NETWORK_ARNETWORKAL_WIFINETWORK_PRIVATE_H_ */
+#endif /** _ARNETWORKAL_WIFINETWORK_PRIVATE_H_ */
 

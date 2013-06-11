@@ -97,7 +97,6 @@ AC_ARG_WITH([libARSALLibDir],
 ##########################################################################
 # Define includes directories
 ##########################################################################
-
 # include local headers first
 CFLAGS+=" -I$srcdir/../Includes -I$srcdir/../Sources"
 # add the headers directory of libSal
@@ -124,6 +123,15 @@ AC_CHECK_HEADERS([libARSAL/ARSAL_Print.h libARSAL/ARSAL_Thread.h libARSAL/ARSAL_
 libARSAL/ARSAL_Socket.h libARSAL/ARSAL_Time.h],,
 	AC_MSG_ERROR(The libARSAL headers are required in order to build the library !
 - Use --with-libARSALInstallDir of --with-libARSALIncludeDir to indicate a specific include path.))
+
+AC_LANG_PUSH([Objective C])
+OBJCFLAGS+=" -std=gnu99 $CFLAGS"
+
+# Checks for CoreBluetooth/CoreBluetooth.h
+AC_CHECK_HEADERS([CoreBluetooth/CoreBluetooth.h], , 
+	AC_MSG_WARN(The CoreBluetooth headers are required to use bluetooth features ! ))
+AM_CONDITIONAL([HAVE_COREBLUETOOTH], [test x"$ac_cv_header_CoreBluetooth_CoreBluetooth_h" = x"yes"])
+AC_LANG_POP([Objective C])
 
 ##########################################################################
 # Checks for programs.
@@ -160,6 +168,7 @@ fi
 # --> set these variables instead of CFLAGS or LDFLAGS
 AC_SUBST([CFLAGS])
 AC_SUBST([LDFLAGS])
+AC_SUBST([OBCJFLAGS])
 
 # Checks for library functions.
 
@@ -172,7 +181,9 @@ echo "
   $PACKAGE_NAME version $PACKAGE_VERSION
   Prefix.........: $prefix
   Debug Build....: $debugit
+  Core bluetooth.: $ac_cv_header_CoreBluetooth_CoreBluetooth_h
   C Compiler.....: $CC $CFLAGS
+  ObjC Compiler..: $CC $OBJCFLAGS
   Linker.........: $LD $LDFLAGS $LIBS
   Doxygen........: ${DOXYGEN:-NONE}
 "
