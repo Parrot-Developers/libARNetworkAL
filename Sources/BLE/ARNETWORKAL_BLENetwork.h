@@ -58,4 +58,13 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_sendingCallback(ARNE
  **/
 eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(ARNETWORKAL_Manager_t *manager);
 
+/**
+ *  @brief Connect to a BLE device.
+ *  @param[in] manager address of the pointer on the Manager
+ *  @param[in] peripheral address of peripheral at which the data will be sent and received.
+ *  @param[in] timeoutSec timeout in seconds set on the socket to limit the time of blocking of the receiving.
+ *  @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
+
 #endif /** _ARNETWORKAL_BLENETWORK_PRIVATE_H_ */

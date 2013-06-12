@@ -37,11 +37,17 @@ char* ARNETWORKAL_Error_ToString (eARNETWORKAL_ERROR error)
     case ARNETWORKAL_ERROR_MANAGER:
         return "Unknown ARNETWORK_Manager error";
         break;
-    case ARNETWORKAL_ERROR_SOCKET:
-        return "Unknown socket error";
+    case ARNETWORKAL_ERROR_WIFI:
+        return "Unknown wifi error";
         break;
-    case ARNETWORKAL_ERROR_SOCKET_PERMISSION_DENIED:
+    case ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION:
+        return "Creation socket error";
+        break;
+    case ARNETWORKAL_ERROR_WIFI_SOCKET_PERMISSION_DENIED:
         return "Permission denied on a socket";
+        break;
+    case ARNETWORKAL_ERROR_BLE_CONNECTION:
+        return "Unknown BLE error";
         break;
     default:
         return "Unknown error";

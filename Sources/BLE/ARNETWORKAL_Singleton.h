@@ -8,21 +8,23 @@
 #ifndef _ARNETWORKAL_SINGLETON_PRIVATE_H_
 #define _ARNETWORKAL_SINGLETON_PRIVATE_H_
 
-#define SYNTHESIZE_SINGLETON_FOR_CLASS(classname)       \
-+ (classname *)shared##classname                        \
-{                                                       \
-static classname *shared##classname = nil;              \
-static dispatch_once_t onceToken;                       \
-dispatch_once(&onceToken, ^{                            \
-shared##classname = [[classname alloc] init];           \
-});                                                     \
-return shared##classname;                               \
+#define SYNTHESIZE_SINGLETON_FOR_CLASS(classname, initFunc) \
++ (classname *)shared##classname                            \
+{                                                           \
+    static classname *shared##classname = nil;              \
+    static dispatch_once_t onceToken;                       \
+    dispatch_once(&onceToken, ^{                            \
+        shared##classname = [[classname alloc] init];       \
+        [shared##classname initFunc];                       \
+    });                                                     \
+                                                            \
+    return shared##classname;                               \
 }
 
-#define DECLARE_SINGLETON_FOR_CLASS(classname)          \
+#define DECLARE_SINGLETON_FOR_CLASS(classname)              \
 + (classname *)shared##classname;
 
-#define SINGLETON_FOR_CLASS(classname)                  \
+#define SINGLETON_FOR_CLASS(classname)                      \
 [classname shared##classname]
 
 #endif /** _ARNETWORKAL_SINGLETON_PRIVATE_H_ */

@@ -11,6 +11,9 @@
  *
  *****************************************/
 #include <libARSAL/ARSAL_Endianness.h>
+#include "ARNETWORKAL_Singleton.h"
+
+#import <CoreBluetooth/CoreBluetooth.h>
 #import "ARNETWORKAL_BLENetwork.h"
 #import "ARNETWORKAL_BLEManager.h"
 
@@ -119,6 +122,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
     {
 		if (manager->senderObject)
 		{
+            // TO DO
 			//ARSAL_Socket_Close(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->socket);
             
 			if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer)
@@ -133,6 +137,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
         
 		if(manager->senderObject)
 		{
+            // TO DO
 			//ARSAL_Socket_Close(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->socket);
             
 			if(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer)
@@ -274,6 +279,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_sendingCallback(ARNE
     
     if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size != 0)
     {
+        // TO DO
     	//ARSAL_Socket_Send(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->socket, ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer, ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size, 0);
     	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size = 0;
 	    ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame = ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer;
@@ -288,6 +294,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(AR
     
     /** -- receiving data present on the socket -- */
     /** local declarations */
+    // TO DO
     int size = 0;
     //int size = ARSAL_Socket_Recv (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->socket, ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer, ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE, 0);
     
@@ -305,3 +312,26 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(AR
     
     return result;
 }
+
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
+{
+    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    CBPeripheral *peripheral = (CBPeripheral *)device;
+    if(peripheral == nil)
+    {
+        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_PARAMETERS;
+    }
+    
+    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    {
+        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) connectToPeripheral:peripheral])
+        {
+            result = ARNETWORKAL_ERROR_BLE_CONNECTION;
+        }
+    }
+    
+    return result;
+}
+
+
+

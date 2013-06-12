@@ -188,7 +188,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
         if(manager->senderObject < 0)
         {
-        	error = ARNETWORKAL_ERROR_SOCKET_CREATION;
+        	error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
         }
     }
 
@@ -206,11 +206,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
             switch (errno)
             {
             case EACCES:
-                error = ARNETWORKAL_ERROR_SOCKET_PERMISSION_DENIED;
+                error = ARNETWORKAL_ERROR_WIFI_SOCKET_PERMISSION_DENIED;
                 break;
 
             default:
-                error = ARNETWORKAL_ERROR_SOCKET;
+                error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
         }
@@ -241,7 +241,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
     	((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
         if(manager->receiverObject < 0)
         {
-        	error = ARNETWORKAL_ERROR_SOCKET_CREATION;
+        	error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
         }
     }
 
@@ -264,11 +264,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
 			switch (errno)
 			{
 			case EACCES:
-				error = ARNETWORKAL_ERROR_SOCKET_PERMISSION_DENIED;
+				error = ARNETWORKAL_ERROR_WIFI_SOCKET_PERMISSION_DENIED;
 				break;
 
 			default:
-				error = ARNETWORKAL_ERROR_SOCKET;
+				error = ARNETWORKAL_ERROR_WIFI;
 				break;
 			}
 		}

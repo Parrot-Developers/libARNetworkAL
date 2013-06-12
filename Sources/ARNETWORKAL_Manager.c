@@ -144,14 +144,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWiFiNetwork (ARNETWORKAL_Manager_t *
     return error;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
 {
     /** local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
 #if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
     /** -- Initialize the BLE Network -- */
-    
     /** check parameters*/
     if (manager == NULL)
     {
@@ -165,12 +164,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
     
     if (error == ARNETWORKAL_OK)
     {
-        //error = ARNETWORKAL_BLENetwork_Connect (manager, addr, sendingPort);
-    }
-    
-    if (error == ARNETWORKAL_OK)
-    {
-        //error = ARNETWORKAL_BLENetwork_Bind (manager, receivingPort, recvTimeoutSec);
+        error = ARNETWORKAL_BLENetwork_Connect(manager, device, recvTimeoutSec);
     }
     
     if(error == ARNETWORKAL_OK)

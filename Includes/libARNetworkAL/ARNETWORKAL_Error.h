@@ -13,19 +13,22 @@
  */
 typedef enum
 {
-    ARNETWORKAL_OK = 0,                			/**< No error */
-    ARNETWORKAL_ERROR = -1000,         			/**< ARNetworkAL Generic error */
-    ARNETWORKAL_ERROR_ALLOC,           			/**< Memory allocation error */
-    ARNETWORKAL_ERROR_BAD_PARAMETER,   			/**< Bad parameters */
+    ARNETWORKAL_OK = 0,                             /**< No error */
+    ARNETWORKAL_ERROR = -1000,                      /**< ARNetworkAL Generic error */
+    ARNETWORKAL_ERROR_ALLOC,                        /**< Memory allocation error */
+    ARNETWORKAL_ERROR_BAD_PARAMETER,                /**< Bad parameters */
 
-    ARNETWORKAL_ERROR_MANAGER = -2000, 			/**< Manager generic error */
+    ARNETWORKAL_ERROR_MANAGER = -2000,              /**< Manager generic error */
 
-    ARNETWORKAL_ERROR_NETWORK,                  /**< Network generic error */
-    ARNETWORKAL_ERROR_UNKNOWN_NETWORK = -3000, 	/**< Unknown network error */
+    ARNETWORKAL_ERROR_NETWORK,                      /**< Network generic error */
+    ARNETWORKAL_ERROR_UNKNOWN_NETWORK = -3000,      /**< Unknown network error */
     
-    ARNETWORKAL_ERROR_SOCKET = -4000,  			/**< Socket generic error */
-    ARNETWORKAL_ERROR_SOCKET_CREATION,			/**< Socket error during creation */
-    ARNETWORKAL_ERROR_SOCKET_PERMISSION_DENIED, /**< Permission denied on a socket */
+    ARNETWORKAL_ERROR_WIFI = -4000,                 /**< Wifi generic error */
+    ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION,			/**< Wifi socket error during creation */
+    ARNETWORKAL_ERROR_WIFI_SOCKET_PERMISSION_DENIED,/**< Wifi socket permission denied */
+    
+    ARNETWORKAL_ERROR_BLE_CONNECTION = -5000,  		/**< BLE connection generic error */
+    
 } eARNETWORKAL_ERROR;
 
 /**
