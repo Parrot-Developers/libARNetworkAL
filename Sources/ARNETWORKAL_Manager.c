@@ -23,7 +23,11 @@
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include "Wifi/ARNETWORKAL_WifiNetwork.h"
+
+#if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
 #include "BLE/ARNETWORKAL_BLENetwork.h"
+#endif
+
 #include "ARNETWORKAL_Manager.h"
 
 /*****************************************
