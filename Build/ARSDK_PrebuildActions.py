@@ -125,7 +125,8 @@ def readEnumEntriesFromFile (filename):
             if line.startswith ('}'):
                 foundEnum = False
                 enumName, _, _ = line.partition (';')
-                _, _, enumName = enumName.partition (' ')
+                _, _, enumName = enumName.partition ('}')
+                enumName = enumName.strip ()
                 currentEnumType.setName (enumName)
                 allEnums.append (currentEnumType)
                 currentEnumType = AREnumType ()
