@@ -14,15 +14,18 @@
 typedef enum
 {
     ARNETWORKAL_OK = 0,                			/**< No error */
-    ARNETWORKAL_ERROR = -1000,         			/**< Unknown generic error */
+    ARNETWORKAL_ERROR = -1000,         			/**< ARNetworkAL Generic error */
     ARNETWORKAL_ERROR_ALLOC,           			/**< Memory allocation error */
     ARNETWORKAL_ERROR_BAD_PARAMETER,   			/**< Bad parameters */
 
-    ARNETWORKAL_ERROR_MANAGER = -2000, 			/**< Unknown ARNETWORKAL_Manager error */
+    ARNETWORKAL_ERROR_MANAGER = -2000, 			/**< Manager generic error */
 
-    ARNETWORKAL_ERROR_SOCKET = -4000,  			/**< Unknown socket error */
-    ARNETWORKAL_ERROR_SOCKET_CREATION,				/**< Socket error during creation */
-    ARNETWORKAL_ERROR_SOCKET_PERMISSION_DENIED, 	/**< Permission denied on a socket */
+    ARNETWORKAL_ERROR_NETWORK,                  /**< Network generic error */
+    ARNETWORKAL_ERROR_UNKNOWN_NETWORK = -3000, 	/**< Unknown network error */
+    
+    ARNETWORKAL_ERROR_SOCKET = -4000,  			/**< Socket generic error */
+    ARNETWORKAL_ERROR_SOCKET_CREATION,			/**< Socket error during creation */
+    ARNETWORKAL_ERROR_SOCKET_PERMISSION_DENIED, /**< Permission denied on a socket */
 } eARNETWORKAL_ERROR;
 
 /**

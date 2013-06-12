@@ -10,7 +10,7 @@
  *             include file :
  *
  *****************************************/
-
+#include <config.h>
 #include <stdlib.h>
 
 #include <inttypes.h>
@@ -23,6 +23,7 @@
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include "Wifi/ARNETWORKAL_WifiNetwork.h"
+#include "BLE/ARNETWORKAL_BLENetwork.h"
 #include "ARNETWORKAL_Manager.h"
 
 /*****************************************
@@ -139,6 +140,69 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWiFiNetwork (ARNETWORKAL_Manager_t *
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *manager)
+{
+    /** local declarations */
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+#if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
+    /** -- Initialize the BLE Network -- */
+    
+    /** check parameters*/
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    if(error == ARNETWORKAL_OK)
+    {
+    	error = ARNETWORKAL_BLENetwork_New(manager);
+    }
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        //error = ARNETWORKAL_BLENetwork_Connect (manager, addr, sendingPort);
+    }
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        //error = ARNETWORKAL_BLENetwork_Bind (manager, receivingPort, recvTimeoutSec);
+    }
+    
+    if(error == ARNETWORKAL_OK)
+    {
+        manager->pushNextFrameCallback = ARNETWORKAL_BLENetwork_pushNextFrameCallback;
+        manager->popNextFrameCallback = ARNETWORKAL_BLENetwork_popNextFrameCallback;
+        manager->sendingCallback = ARNETWORKAL_BLENetwork_sendingCallback;
+        manager->receivingCallback = ARNETWORKAL_BLENetwork_receivingCallback;
+    }
+    
+#else
+    error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
+    
+#endif
+    
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseBLENetwork (ARNETWORKAL_Manager_t *manager)
+{
+    /** local declarations */
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+#if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
+    /** -- Close the BLE Network -- */
+    if(manager)
+    {
+    	error = ARNETWORKAL_BLENetwork_Delete(manager);
+    }
+#else
+    error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
+#endif
+    
+    return error;
+}
+
 void ARNETWORKAL_Manager_Delete (ARNETWORKAL_Manager_t **manager)
 {
     /** -- Delete the Manager -- */
@@ -149,8 +213,6 @@ void ARNETWORKAL_Manager_Delete (ARNETWORKAL_Manager_t **manager)
     if (localManager)
     {
     	localManager = *manager;
-
-    	ARNETWORKAL_WifiNetwork_Delete(localManager);
 
         if (localManager)
         {

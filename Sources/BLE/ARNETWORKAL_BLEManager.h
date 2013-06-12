@@ -10,10 +10,10 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
+#include "ARNETWORKAL_Singleton.h"
 
 @interface ARNETWORKAL_BLEManager : NSObject
-
-
+DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
 
 @end

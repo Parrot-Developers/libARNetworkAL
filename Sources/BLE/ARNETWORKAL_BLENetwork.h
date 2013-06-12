@@ -9,7 +9,6 @@
 #define _ARNETWORKAL_BLENETWORK_PRIVATE_H_
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
-#import "ARNETWORKAL_BLEManager.h"
 
 /**
  *  @brief Create a new BLENetwork object.

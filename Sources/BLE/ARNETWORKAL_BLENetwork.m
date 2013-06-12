@@ -12,8 +12,9 @@
  *****************************************/
 #include <libARSAL/ARSAL_Endianness.h>
 #import "ARNETWORKAL_BLENetwork.h"
+#import "ARNETWORKAL_BLEManager.h"
 
-#define ARNETWORKAL_BLENETWORK_TAG 					"ARNETWORKAL_BLENetwork"
+#define ARNETWORKAL_BLENETWORK_TAG                      "ARNETWORKAL_BLENetwork"
 #define ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE		20
 #define ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE	20
 

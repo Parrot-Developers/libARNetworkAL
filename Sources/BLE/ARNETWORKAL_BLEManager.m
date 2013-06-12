@@ -14,6 +14,6 @@
 #import "ARNETWORKAL_BLEManager.h"
 
 @implementation ARNETWORKAL_BLEManager
-
+SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
 @end
