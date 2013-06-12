@@ -45,7 +45,6 @@ AC_MSG_RESULT([$sover])
 ##########################################################################
 # Define libraries directories
 ##########################################################################
-
 # get the directories of libARSAL
 AC_ARG_WITH([libARSALInstallDir],
             AS_HELP_STRING([--with-libARSALInstallDir=DIR],[directory of the libARSAL installation @<:@default=PREFIX@:>@]),
@@ -61,7 +60,7 @@ AC_ARG_WITH([libARSALInstallDir],
             fi])
 
 AC_ARG_WITH([libARSALIncludeDir],
-            AS_HELP_STRING([--with-libARSALIncludeDir=DIR],[directory of the libARSAL headers @<:@default=ARSALInstallDir/include@:>@]),
+            AS_HELP_STRING([--with-libARSALIncludeDir=DIR],[directory of the libARSAL headers @<:@default=libARSALInstallDir/include@:>@]),
             [if test x$withval = xno; then
               [if test ! -z $libARSALInstallDir; then
                  libARSALIncludeDir="$libARSALInstallDir/include"
@@ -78,7 +77,7 @@ AC_ARG_WITH([libARSALIncludeDir],
               fi])
 
 AC_ARG_WITH([libARSALLibDir],
-            AS_HELP_STRING([--with-libARSALLibDir=DIR],[directory of the libARSAL libraries @<:@default=ARSALInstallDir/lib@:>@]),
+            AS_HELP_STRING([--with-libARSALLibDir=DIR],[directory of the libARSAL libraries @<:@default=libARSALInstallDir/lib@:>@]),
             [if test x$withval = xno; then
               [if test ! -z $libARSALInstallDir; then
                 libARSALLibDir="$libARSALInstallDir/lib"
@@ -99,7 +98,8 @@ AC_ARG_WITH([libARSALLibDir],
 ##########################################################################
 # include local headers first
 CFLAGS+=" -I$srcdir/../Includes -I$srcdir/../Sources"
-# add the headers directory of libSal
+
+# add the headers directory of libARSAL
 if test ! -z $libARSALIncludeDir; then
   CFLAGS+=" -I$libARSALIncludeDir"
 fi
@@ -134,6 +134,14 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([libARNetwork], [doxygen.cfg], [$srcdir/../Doc])
 AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
 
+# Check for python and run prebuild PY script
+AM_PATH_PYTHON(,, AC_MSG_ERROR(Python is required to generate source files for this library))
+
+# Run prebuild PY script
+AC_MSG_NOTICE([Executing python prebuild commands])
+AM_CONDITIONAL([PYTHON_RUN_OK], [$PYTHON $srcdir/../Build/ARSDK_PrebuildActions.py])
+AM_COND_IF([PYTHON_RUN_OK], , AC_MSG_ERROR(Python processing failed))
+
 # Checks for header files.
 AC_HEADER_STDC
 
@@ -163,7 +171,7 @@ AC_TYPE_SIZE_T
 
 # Generate libtool version info number
 if test x"$sover" = x"yes"; then
-    LDFLAGS+=" -release $PACKAGE_VERSION"
+	LDFLAGS+=" -release $PACKAGE_VERSION"
 else
     LDFLAGS+=" -avoid-version"
 fi
