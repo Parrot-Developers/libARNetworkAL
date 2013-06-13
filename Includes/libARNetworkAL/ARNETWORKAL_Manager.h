@@ -17,7 +17,12 @@
 typedef struct ARNETWORKAL_Manager_t ARNETWORKAL_Manager_t;
 
 /**
- *  @brief BLE debice allow to send to BLE network and receive from a BLE network.
+ *  @brief BLE device manager allow to send to BLE network and receive from a BLE network.
+ */
+typedef void* ARNETWORKAL_BLEDeviceManager_t;
+
+/**
+ *  @brief BLE device is the device to send and receive data.
  */
 typedef void* ARNETWORKAL_BLEDevice_t;
 
@@ -117,7 +122,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWiFiNetwork(ARNETWORKAL_Manager_t *m
  *  @param manager pointer on the Manager
  *  @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
 
 /**
  *  @brief close BLE network.

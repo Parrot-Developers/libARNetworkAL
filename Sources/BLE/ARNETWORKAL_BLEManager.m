@@ -22,20 +22,22 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 
 // Initializing function to synhtesize singleton
 - (void)ARNETWORKAL_BLEManager_Init
-{
-    centralManager = [[CBCentralManager alloc] initWithDelegate:SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) queue:nil];
-    
+{    
     activePeripheral = nil;
     ARSAL_Mutex_Init(&connectionMutex);
     ARSAL_Cond_Init(&connectionCond);
 }
 
-- (BOOL)connectToPeripheral:(CBPeripheral *)peripheral
+- (BOOL)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager
 {
+    id <CBCentralManagerDelegate> previousDelegate = centralManager.delegate;
+    [centralManager setDelegate:self];
     [centralManager connectPeripheral:peripheral options:nil];
     ARSAL_Mutex_Lock(&connectionMutex);
     ARSAL_Cond_Wait(&connectionCond, &connectionMutex);
     ARSAL_Mutex_Unlock(&connectionMutex);
+    
+    [centralManager setDelegate:previousDelegate];
     
     return (activePeripheral != nil);
 }
@@ -89,16 +91,15 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 {
     NSLog(@"%s:%d : %@", __FUNCTION__, __LINE__, peripheral);
     activePeripheral = nil;
+    
+    ARSAL_Mutex_Lock(&connectionMutex);
+    ARSAL_Cond_Signal(&connectionCond);
+    ARSAL_Mutex_Unlock(&connectionMutex);
 }
 
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
 {
     NSLog(@"%s:%d : %@", __FUNCTION__, __LINE__, peripheral);
-    activePeripheral = nil;
-
-    ARSAL_Mutex_Lock(&connectionMutex);
-    ARSAL_Cond_Signal(&connectionCond);
-    ARSAL_Mutex_Unlock(&connectionMutex);
 }
 
 #pragma mark CBPeripheralDelegate

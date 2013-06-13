@@ -313,10 +313,12 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(AR
     return result;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
 {
     eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    CBCentralManager *centralManager = (CBCentralManager *)deviceManager;
     CBPeripheral *peripheral = (CBPeripheral *)device;
+    
     if(peripheral == nil)
     {
         result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_PARAMETERS;
@@ -324,7 +326,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
     
     if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
     {
-        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) connectToPeripheral:peripheral])
+        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) connectToPeripheral:peripheral withCentralManager:centralManager])
         {
             result = ARNETWORKAL_ERROR_BLE_CONNECTION;
         }

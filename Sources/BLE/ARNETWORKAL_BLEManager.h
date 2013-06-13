@@ -15,7 +15,6 @@
 
 @interface ARNETWORKAL_BLEManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 {
-    CBCentralManager *centralManager;
     CBPeripheral *activePeripheral;
     
     ARSAL_Mutex_t connectionMutex;
@@ -25,7 +24,7 @@
 
 DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
-- (BOOL)connectToPeripheral:(CBPeripheral *)peripheral;
+- (BOOL)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
 
 @end
 
