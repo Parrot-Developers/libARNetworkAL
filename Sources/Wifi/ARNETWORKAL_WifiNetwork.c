@@ -150,7 +150,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
 			manager->senderObject = NULL;
 		}
 
-		if(manager->senderObject)
+		if(manager->receiverObject)
 		{
 			ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket);
 

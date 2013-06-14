@@ -136,7 +136,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWiFiNetwork (ARNETWORKAL_Manager_t *
     /** local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
-    if(manager)
+    if(manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    if(error == ARNETWORKAL_OK)
     {
     	error = ARNETWORKAL_WifiNetwork_Delete(manager);
     }
