@@ -10,21 +10,20 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
-#include <libARSAL/ARSAL_Mutex.h>
+#include <libARSAL/ARSAL_Sem.h>
 #include "ARNETWORKAL_Singleton.h"
 
 @interface ARNETWORKAL_BLEManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 {
     CBPeripheral *activePeripheral;
-    
-    ARSAL_Mutex_t connectionMutex;
-    ARSAL_Cond_t connectionCond;
-    
+    ARSAL_Sem_t connectionSem;
+    ARSAL_Sem_t disconnectionSem;
 }
 
 DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
 - (BOOL)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
+- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
 
 @end
 

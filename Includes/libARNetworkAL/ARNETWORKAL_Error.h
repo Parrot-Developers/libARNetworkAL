@@ -28,6 +28,7 @@ typedef enum
     ARNETWORKAL_ERROR_WIFI_SOCKET_PERMISSION_DENIED, /**< Wifi socket permission denied */
 
     ARNETWORKAL_ERROR_BLE_CONNECTION = -5000,        /**< BLE connection generic error */
+    ARNETWORKAL_ERROR_BLE_DISCONNECTION,             /**< BLE disconnection error */
 } eARNETWORKAL_ERROR;
 
 /**

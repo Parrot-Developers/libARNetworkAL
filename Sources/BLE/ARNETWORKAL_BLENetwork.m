@@ -28,7 +28,8 @@
  *****************************************/
 typedef struct _ARNETWORKAL_BLENetworkObject_
 {
-	CBPeripheral *peripheral;
+	ARNETWORKAL_BLEDeviceManager_t *deviceManager;
+	ARNETWORKAL_BLEDevice_t *device;
 	uint8_t *buffer;
 	uint8_t *currentFrame;
 	uint32_t size;
@@ -55,7 +56,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_New (ARNETWORKAL_Manager_t *manager)
     	manager->senderObject = malloc(sizeof(ARNETWORKAL_BLENetworkObject));
     	if(manager->senderObject != NULL)
     	{
-    		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->peripheral = nil;
+    		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = NULL;
+    		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = NULL;
     	}
     	else
     	{
@@ -84,7 +86,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_New (ARNETWORKAL_Manager_t *manager)
     	manager->receiverObject = malloc(sizeof(ARNETWORKAL_BLENetworkObject));
     	if(manager->receiverObject != NULL)
     	{
-    		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->peripheral = nil;
+    		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = NULL;
+    		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = NULL;
      	}
     	else
     	{
@@ -120,35 +123,46 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
     
     if(error == ARNETWORKAL_OK)
     {
-		if (manager->senderObject)
-		{
-            // TO DO
-			//ARSAL_Socket_Close(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->socket);
-            
-			if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer)
-			{
-			    free (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer);
-			    ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer = NULL;
-			}
-            
-		    free (manager->senderObject);
-			manager->senderObject = NULL;
-		}
+        CBCentralManager *centralManager = (CBCentralManager *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager);
+        CBPeripheral *peripheral = (CBPeripheral *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device);
         
-		if(manager->senderObject)
-		{
-            // TO DO
-			//ARSAL_Socket_Close(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->socket);
+        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) disconnectPeripheral:peripheral withCentralManager:centralManager])
+        {
+            error = ARNETWORKAL_ERROR_BLE_DISCONNECTION;
+        }
+    }
+    
+    if(error == ARNETWORKAL_OK)
+    {
+        if (manager->senderObject)
+        {
+            ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = NULL;
+            ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = NULL;
             
-			if(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer)
-			{
-			    free (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer);
-			    ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer = NULL;
-			}
+            if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer)
+            {
+                free (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer);
+                ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer = NULL;
+            }
             
-			free (manager->receiverObject);
-			manager->receiverObject = NULL;
-		}
+            free (manager->senderObject);
+            manager->senderObject = NULL;
+        }
+        
+        if(manager->receiverObject)
+        {
+            ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = NULL;
+            ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = NULL;
+
+            if(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer)
+            {
+                free (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer);
+                ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer = NULL;
+            }
+            
+            free (manager->receiverObject);
+            manager->receiverObject = NULL;
+        }
     }
     
     return error;
@@ -330,6 +344,14 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
         {
             result = ARNETWORKAL_ERROR_BLE_CONNECTION;
         }
+    }
+    
+    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    {
+        ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = deviceManager;
+        ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = device;
+        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = deviceManager;
+        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = device;
     }
     
     return result;
