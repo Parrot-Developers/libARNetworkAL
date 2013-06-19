@@ -29,6 +29,9 @@ typedef enum
 
     ARNETWORKAL_ERROR_BLE_CONNECTION = -5000,        /**< BLE connection generic error */
     ARNETWORKAL_ERROR_BLE_DISCONNECTION,             /**< BLE disconnection error */
+    ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING,       /**< BLE network services discovering error */
+    ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING,       /**< BLE network services discovering error */
+    
 } eARNETWORKAL_ERROR;
 
 /**

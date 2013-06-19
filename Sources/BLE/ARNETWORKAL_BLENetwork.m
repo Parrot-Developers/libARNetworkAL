@@ -348,6 +348,26 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
     
     if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
     {
+        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkServices:nil])
+        {
+            result = ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
+        }
+    }
+    
+    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    {
+        for (CBService *service in peripheral.services)
+        {
+            if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkCharacteristics:nil forService:service])
+            {
+                result = ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING;
+                break;
+            }
+        }
+    }
+    
+    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    {
         ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = deviceManager;
         ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = device;
         ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = deviceManager;

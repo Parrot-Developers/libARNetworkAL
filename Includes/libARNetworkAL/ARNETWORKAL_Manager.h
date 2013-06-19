@@ -11,6 +11,8 @@
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
 
+#define ARNETWORKAL_BLESERVICE_UUID_PREFIX @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
+
 /**
  *  @brief network manager allow to send to network and receive from a network.
  */

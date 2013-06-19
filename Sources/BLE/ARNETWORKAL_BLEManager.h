@@ -13,18 +13,27 @@
 #include <libARSAL/ARSAL_Sem.h>
 #include "ARNETWORKAL_Singleton.h"
 
+@interface CBUUID (StringExtraction)
+- (NSString *)representativeString;
+@end
+
 @interface ARNETWORKAL_BLEManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
 {
-    CBPeripheral *activePeripheral;
     ARSAL_Sem_t connectionSem;
     ARSAL_Sem_t disconnectionSem;
+    ARSAL_Sem_t discoverServicesSem;
+    ARSAL_Sem_t discoverCharacteristicsSem;
 }
+@property (nonatomic, retain) NSError *discoverServicesError;
+@property (nonatomic, retain) NSError *discoverCharacteristicsError;
+@property (nonatomic, retain) CBPeripheral *activePeripheral;
 
 DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
 - (BOOL)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
 - (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
-
+- (BOOL)discoverNetworkServices:(NSArray *)servicesUUIDs;
+- (BOOL)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service;
 @end
 
 #endif /** _ARNETWORKAL_BLEMANAGER_PRIVATE_H_ */
