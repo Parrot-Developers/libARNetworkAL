@@ -19,7 +19,9 @@
 
 #define ARNETWORKAL_BLENETWORK_TAG                      "ARNETWORKAL_BLENetwork"
 #define ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE		20
-#define ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE	20
+#define ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE	20 + (sizeof(ARNETWORKAL_Frame_t) - 1)
+
+#define ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID @"f"
 
 /*****************************************
  *
@@ -30,9 +32,7 @@ typedef struct _ARNETWORKAL_BLENetworkObject_
 {
 	ARNETWORKAL_BLEDeviceManager_t *deviceManager;
 	ARNETWORKAL_BLEDevice_t *device;
-	uint8_t *buffer;
-	uint8_t *currentFrame;
-	uint32_t size;
+	CBService *service;
 } ARNETWORKAL_BLENetworkObject;
 
 /*****************************************
@@ -58,21 +58,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_New (ARNETWORKAL_Manager_t *manager)
     	{
     		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = NULL;
     		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = NULL;
-    	}
-    	else
-    	{
-    		error = ARNETWORKAL_ERROR_ALLOC;
-    	}
-    }
-    
-    /** Allocate sender buffer */
-    if(error == ARNETWORKAL_OK)
-    {
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer = (uint8_t *)malloc(sizeof(uint8_t) * ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE);
-    	if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer != NULL)
-    	{
-    		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size = 0;
-    	    ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame = ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer;
+    		((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service = nil;
     	}
     	else
     	{
@@ -88,21 +74,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_New (ARNETWORKAL_Manager_t *manager)
     	{
     		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = NULL;
     		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = NULL;
+    		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->service = nil;
      	}
-    	else
-    	{
-    		error = ARNETWORKAL_ERROR_ALLOC;
-    	}
-    }
-    
-    /** Allocate receiver buffer */
-    if(error == ARNETWORKAL_OK)
-    {
-    	((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer = (uint8_t *)malloc(sizeof(uint8_t) * ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE);
-    	if(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer != NULL)
-    	{
-    		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size = 0;
-    	}
     	else
     	{
     		error = ARNETWORKAL_ERROR_ALLOC;
@@ -138,13 +111,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
         {
             ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = NULL;
             ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = NULL;
-            
-            if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer)
-            {
-                free (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer);
-                ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer = NULL;
-            }
-            
+            ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service = nil;
+
             free (manager->senderObject);
             manager->senderObject = NULL;
         }
@@ -153,13 +121,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
         {
             ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = NULL;
             ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = NULL;
+            ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->service = nil;
 
-            if(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer)
-            {
-                free (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer);
-                ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer = NULL;
-            }
-            
             free (manager->receiverObject);
             manager->receiverObject = NULL;
         }
@@ -172,43 +135,30 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallbac
 {
     eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
     
-    if((((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size + frame->size) > ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE)
+    if((frame->size - offsetof(ARNETWORKAL_Frame_t, dataPtr) + sizeof(uint8_t)) > ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE) // uint8_t is frame type
     {
-    	result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_FULL;
+    	result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
     }
     
     if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
     {
-        uint32_t droneEndianUInt32 = 0;
-        
-    	/** Add type */
-    	memcpy (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame, &frame->type, sizeof (uint8_t));
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame += sizeof (uint8_t);
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
+        NSMutableData *data = [NSMutableData dataWithCapacity:0];
         
         /** Add frame type */
-    	memcpy (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame, &frame->id, sizeof (uint8_t));
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame += sizeof (uint8_t);
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
-        
-    	/** Add frame sequence number */
-    	droneEndianUInt32 = htodl (frame->seq);
-    	memcpy (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame, &droneEndianUInt32, sizeof (uint32_t));
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame += sizeof (uint32_t);
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size += sizeof (uint32_t);
-        
-    	/** Add frame size */
-    	droneEndianUInt32 =  htodl (frame->size);
-       	memcpy (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame, &droneEndianUInt32, sizeof (uint32_t));
-       	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame += sizeof (uint32_t);
-        ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size += sizeof (uint32_t);
-        
+        [data appendBytes:&frame->type length:sizeof(uint8_t)];
+
         /** Add frame data */
         uint32_t dataSize = frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
+        [data appendBytes:frame->dataPtr length:dataSize];
         
-      	memcpy (((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame, frame->dataPtr, dataSize);
-      	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame += dataSize;
-        ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size += dataSize;
+        /** Get the good characteristic */
+        CBCharacteristic *characteristicToSend = [[(CBService *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service) characteristics] objectAtIndex:frame->id];
+        NSLog(@"characteristic : %@, frame id : %d", [characteristicToSend.UUID representativeString], frame->id);
+        
+        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
+        {
+            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+        }
     }
     
     return result;
@@ -216,115 +166,26 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallbac
 
 eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE;
     
-    /** -- get a Frame of the receiving buffer -- */
-    /** if the receiving buffer not contain enough data for the frame head*/
-    if (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame > ((((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size) - offsetof (ARNETWORKAL_Frame_t, dataPtr)))
-    {
-        if (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame == (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size))
-        {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY;
-        }
-        else
-        {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
-        }
-    }
-    
-    if (result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
-    {
-        /** Get the frame from the buffer */
-        /** get type */
-        memcpy (&(frame->type), ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint8_t));
-        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t) ;
-        
-        /** get id */
-        memcpy (&(frame->id), ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint8_t));
-        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t);
-        
-        /** get seq */
-        memcpy (&(frame->seq), ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint32_t));
-        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint32_t);
-        /** convert the endianness */
-        frame->seq = dtohl (frame->seq);
-        
-        /** get size */
-        memcpy (&(frame->size), ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint32_t));
-        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame += sizeof(uint32_t);
-        /** convert the endianness */
-        frame->size = dtohl (frame->size);
-        
-        /** get data address */
-        frame->dataPtr = ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame;
-        
-        /** if the receiving buffer not contain enough data for the full frame */
-        if (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame > ((((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size) - (frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr))))
-        {
-         	result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
-        }
-    }
-    
-    if (result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
-    {
-        /** offset the readingPointer on the next frame */
-    	((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame + frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
-    }
-    else
-    {
-        /** reset the reading pointer to the start of the buffer */
-    	((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer;
-    	((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size = 0;
-        
-        /** reset frame */
-        frame->type = ARNETWORKAL_FRAME_TYPE_UNINITIALIZED;
-        frame->id = 0;
-        frame->seq = 0;
-        frame->size = 0;
-        frame->dataPtr = NULL;
-    }
+    /** reset frame */
+    frame->type = ARNETWORKAL_FRAME_TYPE_UNINITIALIZED;
+    frame->id = 0;
+    frame->seq = 0;
+    frame->size = 0;
+    frame->dataPtr = NULL;
     
     return result;
 }
 
 eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_sendingCallback(ARNETWORKAL_Manager_t *manager)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
-    
-    if(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size != 0)
-    {
-        // TO DO
-    	//ARSAL_Socket_Send(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->socket, ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer, ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size, 0);
-    	((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->size = 0;
-	    ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->currentFrame = ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->buffer;
-    }
-    
-    return result;
+    return ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
 }
 
 eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(ARNETWORKAL_Manager_t *manager)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
-    
-    /** -- receiving data present on the socket -- */
-    /** local declarations */
-    // TO DO
-    int size = 0;
-    //int size = ARSAL_Socket_Recv (((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->socket, ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer, ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE, 0);
-    
-	if (size > 0)
-	{
-        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size = size;
-	}
-	else
-	{
-		result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE;
-		((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->size = 0;
-	}
-    
-	((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->buffer;
-    
-    return result;
+    return ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
 }
 
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
@@ -332,6 +193,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
     eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
     CBCentralManager *centralManager = (CBCentralManager *)deviceManager;
     CBPeripheral *peripheral = (CBPeripheral *)device;
+    CBService *senderService = nil;
+    CBService *receiverService = nil;
     
     if(peripheral == nil)
     {
@@ -348,30 +211,56 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
     
     if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
     {
-        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkServices:nil])
+        if([SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkServices:nil])
+        {
+            for(int i = 0 ; (i < [[peripheral services] count]) && ((senderService == nil) || (receiverService == nil)) ; i++)
+            {
+                CBService *service = [[peripheral services] objectAtIndex:i];
+                NSLog(@"Service : %@, %04x", [service.UUID representativeString], service.UUID);
+                if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
+                {
+                    if([SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkCharacteristics:nil forService:service])
+                    {
+                        if([[service characteristics] count] > 0)
+                        {
+                            CBCharacteristic *characteristic = [[service characteristics] objectAtIndex:0];
+                            if((senderService == nil) && ((characteristic.properties & CBCharacteristicPropertyWriteWithoutResponse) == CBCharacteristicPropertyWriteWithoutResponse))
+                            {
+                                senderService = service;
+                            }
+
+                            if((receiverService == nil) && (characteristic.properties & CBCharacteristicPropertyRead) == CBCharacteristicPropertyRead)
+                            {
+                                receiverService = service;
+                            }
+                        }
+                    }
+                    // NO ELSE
+                    // This service is unknown by ARNetworkAL, ignore it
+                }
+                // NO ELSE
+                // It's not a Parrot characteristics, ignore it
+            }
+        }
+
+        if((senderService == nil) || (receiverService == nil))
         {
             result = ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
         }
     }
-    
+
     if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
     {
-        for (CBService *service in peripheral.services)
-        {
-            if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkCharacteristics:nil forService:service])
-            {
-                result = ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING;
-                break;
-            }
-        }
-    }
-    
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
-    {
+        NSLog(@"Sender service : %@", [senderService.UUID representativeString]);
+        NSLog(@"Receiver service : %@", [receiverService.UUID representativeString]);
+
         ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->deviceManager = deviceManager;
         ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device = device;
+        ((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service = senderService;
+        
         ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->deviceManager = deviceManager;
         ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = device;
+        ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->service = receiverService;
     }
     
     return result;

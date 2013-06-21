@@ -34,6 +34,7 @@ DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 - (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
 - (BOOL)discoverNetworkServices:(NSArray *)servicesUUIDs;
 - (BOOL)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service;
+- (BOOL)writeData:(NSData *)data toCharacteristic:(CBCharacteristic *)characteristic;
 @end
 
 #endif /** _ARNETWORKAL_BLEMANAGER_PRIVATE_H_ */

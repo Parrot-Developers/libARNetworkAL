@@ -13,7 +13,7 @@
  *****************************************/
 #import "ARNETWORKAL_BLEManager.h"
 
-#define ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG (0)
+#define ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG (1)
 
 #pragma mark CBUUID (String Extraction extension)
 @implementation CBUUID (StringExtraction)
@@ -96,7 +96,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         self.discoverCharacteristicsError = nil;
         for(CBCharacteristic *characteristic in service.characteristics)
         {
-            NSLog(@"Characteristic : %@", [characteristic.UUID representativeString]);
+            NSLog(@"Characteristic : %@, properties : %08x", [characteristic.UUID representativeString], characteristic.properties);
         }
     }
     
@@ -128,20 +128,32 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 
 - (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager
 {
-    id <CBCentralManagerDelegate> previousDelegate = centralManager.delegate;
-    [centralManager setDelegate:self];
-    
     if(self.activePeripheral != nil)
     {
+        id <CBCentralManagerDelegate> previousDelegate = centralManager.delegate;
+        [centralManager setDelegate:self];
+        
         [centralManager cancelPeripheralConnection:activePeripheral];
         ARSAL_Sem_Wait(&disconnectionSem);
         self.activePeripheral.delegate = nil;
         self.activePeripheral = nil;
+        
+        [centralManager setDelegate:previousDelegate];
     }
     
-    [centralManager setDelegate:previousDelegate];
-
     return (self.activePeripheral == nil);
+}
+
+- (BOOL)writeData:(NSData *)data toCharacteristic:(CBCharacteristic *)characteristic
+{
+    BOOL result = NO;
+    if((self.activePeripheral != nil) && (characteristic != nil) && (data != nil))
+    {
+        [self.activePeripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithoutResponse];
+        result = YES;
+    }
+    
+    return result;
 }
 
 #pragma mark CBCentralManagerDelegate
@@ -220,6 +232,13 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #endif
     self.discoverCharacteristicsError = error;
     ARSAL_Sem_Post(&discoverCharacteristicsSem);
+}
+
+- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+    NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, peripheral, [error localizedDescription]);
+#endif
 }
 
 - (void)peripheralDidUpdateName:(CBPeripheral *)peripheral
