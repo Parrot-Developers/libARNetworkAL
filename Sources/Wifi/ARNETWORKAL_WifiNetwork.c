@@ -301,10 +301,9 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_pushNextFrameCallba
     	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
 
     	/** Add frame sequence number */
-    	droneEndianUInt32 = htodl (frame->seq);
-    	memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, &droneEndianUInt32, sizeof (uint32_t));
-    	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += sizeof (uint32_t);
-    	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint32_t);
+    	memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, &(frame->seq), sizeof (uint8_t));
+    	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += sizeof (uint8_t);
+    	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
 
     	/** Add frame size */
     	droneEndianUInt32 =  htodl (frame->size);
@@ -314,7 +313,6 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_pushNextFrameCallba
 
         /** Add frame data */
         uint32_t dataSize = frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
-
       	memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, frame->dataPtr, dataSize);
       	((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += dataSize;
         ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += dataSize;
@@ -338,7 +336,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_popNextFrameCallbac
         else
         {
            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
-         }
+        }
     }
 
     if (result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
@@ -353,10 +351,8 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_popNextFrameCallbac
         ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t);
 
         /** get seq */
-        memcpy (&(frame->seq), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint32_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint32_t);
-        /** convert the endianness */
-        frame->seq = dtohl (frame->seq);
+        memcpy (&(frame->seq), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint8_t));
+        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t);
 
         /** get size */
         memcpy (&(frame->size), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint32_t));

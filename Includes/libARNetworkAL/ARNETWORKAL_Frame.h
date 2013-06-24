@@ -30,7 +30,7 @@ typedef struct __attribute__((__packed__))
 {
     uint8_t type; /**< frame type eARNETWORK_FRAME_TYPE */
     uint8_t id; /**< identifier of the buffer sending the frame */
-    uint32_t seq; /**< sequence number of the frame */
+    uint8_t seq; /**< sequence number of the frame */
     uint32_t size; /**< size of the frame */
     uint8_t *dataPtr; /**< pointer on the data of the frame */
 } ARNETWORKAL_Frame_t;

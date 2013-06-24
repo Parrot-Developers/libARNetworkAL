@@ -42,6 +42,7 @@
 }
 @end
 
+#pragma mark ARNETWORKAL_BLEManager implementation
 @interface ARNETWORKAL_BLEManager (private)
 - (void)ARNETWORKAL_BLEManager_Init;
 @end
@@ -50,6 +51,7 @@
 @synthesize discoverServicesError;
 @synthesize discoverCharacteristicsError;
 @synthesize activePeripheral;
+@synthesize characteristicsNotifications;
 
 SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_Init);
 
@@ -59,11 +61,15 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     self.activePeripheral = nil;
     self.discoverServicesError = nil;
     self.discoverCharacteristicsError = nil;
+    self.characteristicsNotifications = [NSMutableArray array];
     
     ARSAL_Sem_Init(&connectionSem, 0, 0);
     ARSAL_Sem_Init(&disconnectionSem, 0, 0);
     ARSAL_Sem_Init(&discoverServicesSem, 0, 0);
     ARSAL_Sem_Init(&discoverCharacteristicsSem, 0, 0);
+    ARSAL_Sem_Init(&readCharacteristicsSem, 0, 0);
+    
+    ARSAL_Mutex_Init(&readCharacteristicMutex);
 }
 
 - (BOOL)discoverNetworkServices:(NSArray *)servicesUUIDs
@@ -94,10 +100,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         ARSAL_Sem_Wait(&discoverCharacteristicsSem);
         result = (self.discoverCharacteristicsError == nil);
         self.discoverCharacteristicsError = nil;
-        for(CBCharacteristic *characteristic in service.characteristics)
-        {
-            NSLog(@"Characteristic : %@, properties : %08x", [characteristic.UUID representativeString], characteristic.properties);
-        }
     }
     
     return result;
@@ -150,6 +152,24 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     if((self.activePeripheral != nil) && (characteristic != nil) && (data != nil))
     {
         [self.activePeripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithoutResponse];
+        result = YES;
+    }
+    
+    return result;
+}
+
+- (BOOL)readData:(NSMutableArray *)mutableArray
+{
+    BOOL result = NO;
+    ARSAL_Sem_Wait(&readCharacteristicsSem);
+    
+    if([self.characteristicsNotifications count] > 0)
+    {
+        //NSLog(@"%s:%d -> mutableArray : %@, notification array : %@", __FUNCTION__, __LINE__, mutableArray, self.characteristicsNotifications);
+        ARSAL_Mutex_Lock(&readCharacteristicMutex);
+        [mutableArray addObjectsFromArray:self.characteristicsNotifications];
+        [self.characteristicsNotifications removeAllObjects];
+        ARSAL_Mutex_Unlock(&readCharacteristicMutex);
         result = YES;
     }
     
@@ -239,6 +259,18 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, peripheral, [error localizedDescription]);
 #endif
+}
+
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+    NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, [characteristic.UUID representativeString], [error localizedDescription]);
+#endif
+    ARSAL_Mutex_Lock(&readCharacteristicMutex);
+    [self.characteristicsNotifications addObject:characteristic];
+    ARSAL_Mutex_Unlock(&readCharacteristicMutex);
+
+    ARSAL_Sem_Post(&readCharacteristicsSem);
 }
 
 - (void)peripheralDidUpdateName:(CBPeripheral *)peripheral
