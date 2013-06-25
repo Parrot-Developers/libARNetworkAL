@@ -11,7 +11,9 @@
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
 
-#define ARNETWORKAL_BLESERVICE_UUID_PREFIX @"E20A39F4-73F5-4BC4-A12F-17D1AD07A961"
+#define ARNETWORKAL_MANAGER_DEFAULT_ID_MAX  256 /**< Default ID Max */
+#define ARNETWORKAL_MANAGER_WIFI_ID_MAX ARNETWORKAL_MANAGER_DEFAULT_ID_MAX /**< ID Max for WifiNetwork */
+#define ARNETWORKAL_MANAGER_BLE_ID_MAX  (ARNETWORKAL_MANAGER_DEFAULT_ID_MAX / 4) /**< ID Max for BLENetwork */
 
 /**
  *  @brief network manager allow to send to network and receive from a network.
@@ -81,6 +83,7 @@ struct ARNETWORKAL_Manager_t
 	ARNETWORKAL_Manager_Receiving_Callback_t receivingCallback;
 	void *senderObject;
 	void *receiverObject;
+    int maxIds;
 };
 
 /**

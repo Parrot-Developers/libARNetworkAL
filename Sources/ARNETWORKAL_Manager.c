@@ -68,6 +68,7 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     	manager->receivingCallback = (ARNETWORKAL_Manager_Receiving_Callback_t)NULL;
     	manager->receiverObject = (void *)NULL;
     	manager->senderObject = (void *)NULL;
+        manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
     }
     else
     {
@@ -124,6 +125,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWiFiNetwork (ARNETWORKAL_Manager_t *m
         manager->popNextFrameCallback = ARNETWORKAL_WifiNetwork_popNextFrameCallback;
         manager->sendingCallback = ARNETWORKAL_WifiNetwork_sendingCallback;
         manager->receivingCallback = ARNETWORKAL_WifiNetwork_receivingCallback;
+        manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
     }
 
     return error;
@@ -178,11 +180,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->popNextFrameCallback = ARNETWORKAL_BLENetwork_popNextFrameCallback;
         manager->sendingCallback = ARNETWORKAL_BLENetwork_sendingCallback;
         manager->receivingCallback = ARNETWORKAL_BLENetwork_receivingCallback;
+        manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
     
 #else
     error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
-    
 #endif
     
     return error;
