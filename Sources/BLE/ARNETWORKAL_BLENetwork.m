@@ -238,7 +238,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
             currentFrame += sizeof(uint8_t);
             
             /** Get frame size */
-            frame->size = [[characteristic value] length] - sizeof(uint8_t) + offsetof(ARNETWORKAL_Frame_t, dataPtr);
+            frame->size = [[characteristic value] length] - (2 * sizeof(uint8_t)) + offsetof(ARNETWORKAL_Frame_t, dataPtr);
             
             /** get data address */
             frame->dataPtr = currentFrame;
@@ -273,7 +273,6 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(AR
     {
 		result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE;
     }
-    NSLog(@"===> array : %@", ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array);
     
     return result;
 }
