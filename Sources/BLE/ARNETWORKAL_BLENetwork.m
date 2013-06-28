@@ -358,7 +358,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
             [peripheral setNotifyValue:YES forCharacteristic:characteristic];
         }
     }
-    
+
     return result;
 }
 
