@@ -13,7 +13,7 @@
  *****************************************/
 #import "ARNETWORKAL_BLEManager.h"
 
-#define ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG (1)
+#define ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG (0)
 
 #pragma mark CBUUID (String Extraction extension)
 @implementation CBUUID (StringExtraction)
@@ -261,16 +261,20 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #endif
 }
 
+- (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
+{
+    ARSAL_Mutex_Lock(&readCharacteristicMutex);
+    [self.characteristicsNotifications addObject:characteristic];
+    ARSAL_Mutex_Unlock(&readCharacteristicMutex);
+    
+    ARSAL_Sem_Post(&readCharacteristicsSem);
+}
+
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, [characteristic.UUID representativeString], [error localizedDescription]);
 #endif
-    ARSAL_Mutex_Lock(&readCharacteristicMutex);
-    [self.characteristicsNotifications addObject:characteristic];
-    ARSAL_Mutex_Unlock(&readCharacteristicMutex);
-
-    ARSAL_Sem_Post(&readCharacteristicsSem);
 }
 
 - (void)peripheralDidUpdateName:(CBPeripheral *)peripheral

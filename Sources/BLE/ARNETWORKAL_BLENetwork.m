@@ -177,7 +177,10 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallbac
         
         /** Get the good characteristic */
         CBCharacteristic *characteristicToSend = [[(CBService *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service) characteristics] objectAtIndex:frame->id];
-        NSLog(@"characteristic : %@, frame id : %d", [characteristicToSend.UUID representativeString], frame->id);
+        /*if((frame->id == 4) || (frame->id == 3))
+        {
+            NSLog(@"characteristic : %@, frame id : %d, seq : %d", [characteristicToSend.UUID representativeString], frame->id, frame->seq);
+        }*/
         
         if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
         {
@@ -217,7 +220,6 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
         int frameId = 0;
         if(sscanf([[[characteristic UUID] representativeString] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
         {
-            NSLog(@"%s:%d - BAD FRAME", __FUNCTION__, __LINE__);
             result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
         }
         
@@ -242,6 +244,8 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
             
             /** get data address */
             frame->dataPtr = currentFrame;
+
+            //NSLog(@"received : %@, frame id : %d, seq : %d, dataPtr : %d", [[characteristic UUID] representativeString], frame->id, frame->seq, frame->dataPtr[0]);
         }
     }
     
@@ -254,9 +258,11 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
         frame->size = 0;
         frame->dataPtr = NULL;
     }
-    
-    [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array removeObjectAtIndex:0];
 
+    if(result != ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY)
+    {
+        [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array removeObjectAtIndex:0];
+    }
     return result;
 }
 
@@ -351,12 +357,26 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
         ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device = device;
         ((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->service = receiverService;
         
-        // Registered notification service.
+        // Registered notification service for receiver.
         for(CBCharacteristic *characteristic in [receiverService characteristics])
         {
-            CBPeripheral *peripheral = (CBPeripheral *)(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device);
-            [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+            if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
+            {
+                CBPeripheral *peripheral = (CBPeripheral *)(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device);
+                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+            }
         }
+        
+        // Registered notification service for acknowledge sender.
+        for(CBCharacteristic *characteristic in [senderService characteristics])
+        {
+            if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
+            {
+                CBPeripheral *peripheral = (CBPeripheral *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device);
+                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+            }
+        }
+        
     }
 
     return result;
