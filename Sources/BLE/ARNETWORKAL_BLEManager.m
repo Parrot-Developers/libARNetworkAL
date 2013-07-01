@@ -165,7 +165,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     
     if([self.characteristicsNotifications count] > 0)
     {
-        //NSLog(@"%s:%d -> mutableArray : %@, notification array : %@", __FUNCTION__, __LINE__, mutableArray, self.characteristicsNotifications);
         ARSAL_Mutex_Lock(&readCharacteristicMutex);
         [mutableArray addObjectsFromArray:self.characteristicsNotifications];
         [self.characteristicsNotifications removeAllObjects];

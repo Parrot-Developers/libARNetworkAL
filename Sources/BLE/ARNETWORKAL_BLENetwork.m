@@ -176,11 +176,15 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallbac
         [data appendBytes:frame->dataPtr length:dataSize];
         
         /** Get the good characteristic */
-        CBCharacteristic *characteristicToSend = [[(CBService *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service) characteristics] objectAtIndex:frame->id];
-        /*if((frame->id == 4) || (frame->id == 3))
+        CBCharacteristic *characteristicToSend = nil;
+        if(frame->type == ARNETWORKAL_FRAME_TYPE_ACK)
         {
-            NSLog(@"characteristic : %@, frame id : %d, seq : %d", [characteristicToSend.UUID representativeString], frame->id, frame->seq);
-        }*/
+            characteristicToSend = [[(CBService *)(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->service) characteristics] objectAtIndex:frame->id];
+        }
+        else
+        {
+            characteristicToSend = [[(CBService *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->service) characteristics] objectAtIndex:frame->id];
+        }
         
         if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
         {
@@ -244,11 +248,14 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
             
             /** get data address */
             frame->dataPtr = currentFrame;
-
-            //NSLog(@"received : %@, frame id : %d, seq : %d, dataPtr : %d", [[characteristic UUID] representativeString], frame->id, frame->seq, frame->dataPtr[0]);
         }
     }
     
+    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY)
+    {
+        [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array removeObjectAtIndex:0];
+    }
+
     if (result != ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
     {        
         /** reset frame */
@@ -259,10 +266,6 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
         frame->dataPtr = NULL;
     }
 
-    if(result != ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY)
-    {
-        [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array removeObjectAtIndex:0];
-    }
     return result;
 }
 
