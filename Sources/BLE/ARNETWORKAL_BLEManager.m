@@ -161,6 +161,9 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 - (BOOL)readData:(NSMutableArray *)mutableArray
 {
     BOOL result = NO;
+#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+    NSLog(@"%s:%d", __FUNCTION__, __LINE__);
+#endif
     ARSAL_Sem_Wait(&readCharacteristicsSem);
     
     if([self.characteristicsNotifications count] > 0)
@@ -262,6 +265,10 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error
 {
+#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+    NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, [characteristic.UUID representativeString], [error localizedDescription]);
+#endif
+    
     ARSAL_Mutex_Lock(&readCharacteristicMutex);
     [self.characteristicsNotifications addObject:characteristic];
     ARSAL_Mutex_Unlock(&readCharacteristicMutex);

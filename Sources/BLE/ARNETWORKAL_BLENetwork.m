@@ -199,7 +199,6 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
 {
     eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
     CBCharacteristic *characteristic = nil;
-    
     /** -- get a Frame of the receiving buffer -- */
     /** if the receiving buffer not contain enough data for the frame head*/
     if([((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array count] == 0)
@@ -251,7 +250,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
         }
     }
     
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY)
+    if(result != ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY)
     {
         [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array removeObjectAtIndex:0];
     }
