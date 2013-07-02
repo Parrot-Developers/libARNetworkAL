@@ -364,8 +364,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
         {
             if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
             {
-                CBPeripheral *peripheral = (CBPeripheral *)(((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->device);
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+                [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:characteristic];
             }
         }
         
@@ -374,8 +373,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
         {
             if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
             {
-                CBPeripheral *peripheral = (CBPeripheral *)(((ARNETWORKAL_BLENetworkObject *)manager->senderObject)->device);
-                [peripheral setNotifyValue:YES forCharacteristic:characteristic];
+                [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:characteristic];
             }
         }
         

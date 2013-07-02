@@ -50,6 +50,7 @@
 @implementation ARNETWORKAL_BLEManager
 @synthesize discoverServicesError;
 @synthesize discoverCharacteristicsError;
+@synthesize configurationCharacteristicError;
 @synthesize activePeripheral;
 @synthesize characteristicsNotifications;
 
@@ -68,6 +69,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     ARSAL_Sem_Init(&discoverServicesSem, 0, 0);
     ARSAL_Sem_Init(&discoverCharacteristicsSem, 0, 0);
     ARSAL_Sem_Init(&readCharacteristicsSem, 0, 0);
+    ARSAL_Sem_Init(&configurationSem, 0, 0);
     
     ARSAL_Mutex_Init(&readCharacteristicMutex);
 }
@@ -83,6 +85,22 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         ARSAL_Sem_Wait(&discoverServicesSem);
         result = (self.discoverServicesError == nil);
         self.discoverServicesError = nil;
+    }
+    
+    return result;
+}
+
+- (BOOL)setNotificationCharacteristic:(CBCharacteristic *)characteristic
+{
+    BOOL result = NO;
+    // If there is an active peripheral, disconnecting it
+    if(self.activePeripheral != nil)
+    {
+        self.configurationCharacteristicError = nil;
+        [self.activePeripheral setNotifyValue:YES forCharacteristic:characteristic];
+        ARSAL_Sem_Wait(&configurationSem);
+        result = (self.configurationCharacteristicError == nil);
+        self.configurationCharacteristicError = nil;
     }
     
     return result;
@@ -281,6 +299,8 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, [characteristic.UUID representativeString], [error localizedDescription]);
 #endif
+    self.configurationCharacteristicError = error;
+    ARSAL_Sem_Post(&configurationSem);
 }
 
 - (void)peripheralDidUpdateName:(CBPeripheral *)peripheral
