@@ -1,6 +1,5 @@
 package com.parrot.arsdk.arnetworkal;
 
-import android.util.Log;
 import com.parrot.arsdk.arsal.ARNativeData;
 
 /**
