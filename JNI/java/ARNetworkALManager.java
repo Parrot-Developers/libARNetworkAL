@@ -4,7 +4,7 @@ import com.parrot.arsdk.arsal.ARNativeData;
 
 /**
  * Network manager allow to send and receive on network.
- **/
+ */
 public class ARNetworkALManager
 {
     private static final String TAG = "ARNetworkALManager";
@@ -17,8 +17,8 @@ public class ARNetworkALManager
     private boolean m_initOk;
 
     /**
-     *  Constructor
-     **/
+     * Constructor
+     */
     public ARNetworkALManager() {
         m_initOk = false;
         m_managerPtr = nativeNew();
@@ -30,9 +30,8 @@ public class ARNetworkALManager
     }
 
     /**
-     *  Dispose
-     *  @post after this function the object must be not used more
-     **/
+     * Dispose
+     */
     public void dispose() {
         if(m_initOk == true)
         {
@@ -43,8 +42,8 @@ public class ARNetworkALManager
     }
 
     /**
-     *  Destructor
-     **/
+     * Destructor
+     */
     public void finalize () throws Throwable {
         try {
             dispose ();
@@ -54,25 +53,25 @@ public class ARNetworkALManager
     }
 
     /**
-     *  Get the pointer C on the network manager
-     *  @return  Pointer C on the network manager
-     **/
+     * Get the pointer C on the network manager
+     * @return  Pointer C on the network manager
+     */
     public long getManager ()
         {
             return m_managerPtr;
         }
 
     /**
-     *  Get is the Manager is correctly initialized and if it is usable
-     *  @return true is the Manager is usable
-     **/
+     * Get is the Manager is correctly initialized and if it is usable
+     * @return true is the Manager is usable
+     */
     public boolean isCorrectlyInitialized () {
         return m_initOk;
     }
 
     /**
-     *  Initialize Wifi network to send and receive data
-     **/
+     * Initialize Wifi network to send and receive data
+     */
     public ARNETWORKAL_ERROR_ENUM initWiFiNetwork(String addr, int sendingPort, int receivingPort, int recvTimeoutSec) {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
 
