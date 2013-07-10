@@ -1,6 +1,6 @@
 /**
- *  @file  ARNETWORKAL_BLENetwork.h
- *  @brief private headers of BLE network manager allow to send over ble network.
+ *  @file  ARNETWORKAL_Singleton.h
+ *  @brief headers to define singletons.
  *  @date 06/11/2013
  *  @author frederic.dhaeyer@parrot.com
  */
