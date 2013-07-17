@@ -62,17 +62,17 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     if (manager != NULL)
     {
         /** Initialize to default values */
-    	manager->pushNextFrameCallback = (ARNETWORKAL_Manager_PushNextFrame_Callback_t)NULL;
-    	manager->popNextFrameCallback = (ARNETWORKAL_Manager_PopNextFrame_Callback_t)NULL;
-    	manager->sendingCallback = (ARNETWORKAL_Manager_Sending_Callback_t)NULL;
-    	manager->receivingCallback = (ARNETWORKAL_Manager_Receiving_Callback_t)NULL;
-    	manager->receiverObject = (void *)NULL;
-    	manager->senderObject = (void *)NULL;
+        manager->pushNextFrameCallback = (ARNETWORKAL_Manager_PushNextFrame_Callback_t)NULL;
+        manager->popNextFrameCallback = (ARNETWORKAL_Manager_PopNextFrame_Callback_t)NULL;
+        manager->sendingCallback = (ARNETWORKAL_Manager_Sending_Callback_t)NULL;
+        manager->receivingCallback = (ARNETWORKAL_Manager_Receiving_Callback_t)NULL;
+        manager->receiverObject = (void *)NULL;
+        manager->senderObject = (void *)NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
     }
     else
     {
-    	localError = ARNETWORKAL_ERROR_ALLOC;
+        localError = ARNETWORKAL_ERROR_ALLOC;
     }
 
     /** delete the Manager if an error occurred */
@@ -106,7 +106,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWiFiNetwork (ARNETWORKAL_Manager_t *m
 
     if(error == ARNETWORKAL_OK)
     {
-    	error = ARNETWORKAL_WifiNetwork_New(manager);
+        error = ARNETWORKAL_WifiNetwork_New(manager);
     }
 
     if (error == ARNETWORKAL_OK)
@@ -118,7 +118,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWiFiNetwork (ARNETWORKAL_Manager_t *m
     {
         error = ARNETWORKAL_WifiNetwork_Bind (manager, receivingPort, recvTimeoutSec);
     }
-    
+
     if(error == ARNETWORKAL_OK)
     {
         manager->pushNextFrameCallback = ARNETWORKAL_WifiNetwork_pushNextFrameCallback;
@@ -142,10 +142,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWiFiNetwork (ARNETWORKAL_Manager_t *
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
-    
+
     if(error == ARNETWORKAL_OK)
     {
-    	error = ARNETWORKAL_WifiNetwork_Delete(manager);
+        error = ARNETWORKAL_WifiNetwork_Delete(manager);
     }
 
     return error;
@@ -163,17 +163,17 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
-    
+
     if(error == ARNETWORKAL_OK)
     {
-    	error = ARNETWORKAL_BLENetwork_New(manager);
+        error = ARNETWORKAL_BLENetwork_New(manager);
     }
-    
+
     if (error == ARNETWORKAL_OK)
     {
         error = ARNETWORKAL_BLENetwork_Connect(manager, deviceManager, device, recvTimeoutSec);
     }
-    
+
     if(error == ARNETWORKAL_OK)
     {
         manager->pushNextFrameCallback = ARNETWORKAL_BLENetwork_pushNextFrameCallback;
@@ -182,11 +182,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->receivingCallback = ARNETWORKAL_BLENetwork_receivingCallback;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
-    
+
 #else
     error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
 #endif
-    
+
     return error;
 }
 
@@ -199,12 +199,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseBLENetwork (ARNETWORKAL_Manager_t *m
     /** -- Close the BLE Network -- */
     if(manager)
     {
-    	error = ARNETWORKAL_BLENetwork_Delete(manager);
+        error = ARNETWORKAL_BLENetwork_Delete(manager);
     }
 #else
     error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
 #endif
-    
+
     return error;
 }
 
@@ -217,7 +217,7 @@ void ARNETWORKAL_Manager_Delete (ARNETWORKAL_Manager_t **manager)
 
     if (localManager)
     {
-    	localManager = *manager;
+        localManager = *manager;
 
         if (localManager)
         {
