@@ -72,7 +72,8 @@ public class ARNetworkALManager
     /**
      * Initialize Wifi network to send and receive data
      */
-    public ARNETWORKAL_ERROR_ENUM initWiFiNetwork(String addr, int sendingPort, int receivingPort, int recvTimeoutSec) {
+    public ARNETWORKAL_ERROR_ENUM initWiFiNetwork(String addr, int sendingPort, int receivingPort, int recvTimeoutSec)
+    {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
 
         if(addr != null)
