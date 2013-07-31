@@ -1,21 +1,27 @@
 LOCAL_PATH := $(call my-dir)
 
-# libNetwork
+# libARSAL
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := LIBARSAL-prebuilt
+LOCAL_SRC_FILES := $(TARGET_ARCH_ABI)/libarsal.a
+
+include $(PREBUILT_STATIC_LIBRARY)
+
+# libNetworkAL
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := LIBARNETWORKAL-prebuilt
-LOCAL_SRC_FILES := lib/libarnetworkal.a
+LOCAL_SRC_FILES := $(TARGET_ARCH_ABI)/libarnetworkal.a
 
 include $(PREBUILT_STATIC_LIBRARY)
 
 # WRAPPER_LIB
 include $(CLEAR_VARS)
 
-LOCAL_C_INCLUDES:= $(LOCAL_PATH)/include $(LOCAL_PATH)/../libARSAL/include
+LOCAL_C_INCLUDES:= $(LOCAL_PATH)/include
 LOCAL_LDLIBS := -llog
 LOCAL_MODULE := libarnetworkal_android
 LOCAL_SRC_FILES := ARNETWORKAL_JNIManager.c
-LOCAL_CFLAGS := -O0 -g
-LOCAL_STATIC_LIBRARIES := LIBARNETWORKAL-prebuilt
-LOCAL_SHARED_LIBRARIES := LIBARSAL-prebuilt
+LOCAL_STATIC_LIBRARIES := LIBARNETWORKAL-prebuilt LIBARSAL-prebuilt
 include $(BUILD_SHARED_LIBRARY)
