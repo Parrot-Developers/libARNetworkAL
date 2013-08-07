@@ -1,12 +1,12 @@
 /**
  * @mainpage
  *
- * @section intro_sec Introduction
+ * @section AL_intro_sec Introduction
  *
  * The ARNetworkAL library is an abstraction layer interface over different
  * types of networks (wifi, bluetooth ...)
  *
- * @section api_sec API
+ * @section AL_api_sec API
  *
  * An @ref ARNETWORKAL_Manager_t object is created using
  * @ref ARNETWORKAL_Manager_New, then initialized using one of the
@@ -23,12 +23,12 @@
  * (@ref ARNETWORKAL_Manager_CloseWifiNetwork,
  * @ref ARNETWORKAL_Manager_CloseBLENetwork)
  *
- * @subsection details_subsec API Details (When not using ARNetwork library)
+ * @subsection AL_details_subsec API Details (When not using ARNetwork library)
  *
  * An @ref ARNETWORKAL_Manager_t object, when properly initialized, provides
  * 4 different callbacks to abstract the undelying network.
  *
- * @subsubsection sending_subsubsec Sending data
+ * @subsubsection AL_sending_subsubsec Sending data
  *
  * @ref ARNETWORKAL_Manager_PushNextFrame_Callback_t function is called every
  * time the application wants to add an @ref ARNETWORKAL_Frame_t to the send
@@ -39,7 +39,7 @@
  * application when it wants the send queue to be sent on the network. On
  * certain networks, this function is a no-op.
  *
- * @subsubsection receiving_subsubsec Receiving data
+ * @subsubsection AL_receiving_subsubsec Receiving data
  *
  * @ref ARNETWORKAL_Manager_Receiving_Callback_t function triggers a network
  * read. This is typically a blocking (with timeout) function which will clock
@@ -50,7 +50,7 @@
  * reading buffer. This function can be called in a loop until it returns
  * @ref ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE
  *
- * @section support_sec Supported network types
+ * @section AL_support_sec Supported network types
  *
  * The library currently support two types of networks:
  *
