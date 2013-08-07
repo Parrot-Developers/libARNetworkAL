@@ -11,7 +11,7 @@ public class ARNetworkALManager
 
     private native long nativeNew();
     private native int nativeDelete(long jManager);
-    private native int nativeInitWiFiNetwork(long jManager, String jaddr, int sendingPort, int receivingPort, int recvTimeoutSec);
+    private native int nativeInitWifiNetwork(long jManager, String jaddr, int sendingPort, int receivingPort, int recvTimeoutSec);
 
     private long m_managerPtr;
     private boolean m_initOk;
@@ -72,13 +72,13 @@ public class ARNetworkALManager
     /**
      * Initialize Wifi network to send and receive data
      */
-    public ARNETWORKAL_ERROR_ENUM initWiFiNetwork(String addr, int sendingPort, int receivingPort, int recvTimeoutSec)
+    public ARNETWORKAL_ERROR_ENUM initWifiNetwork(String addr, int sendingPort, int receivingPort, int recvTimeoutSec)
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
 
         if(addr != null)
         {
-            int intError = nativeInitWiFiNetwork(m_managerPtr, addr, sendingPort, receivingPort, recvTimeoutSec);
+            int intError = nativeInitWifiNetwork(m_managerPtr, addr, sendingPort, receivingPort, recvTimeoutSec);
             error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
 

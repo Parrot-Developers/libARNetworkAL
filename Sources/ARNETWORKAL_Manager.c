@@ -91,7 +91,7 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     return manager;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWiFiNetwork (ARNETWORKAL_Manager_t *manager, const char *addr, int sendingPort, int receivingPort, int recvTimeoutSec)
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *manager, const char *addr, int sendingPort, int receivingPort, int recvTimeoutSec)
 {
     /** -- Initialize the Wifi Network -- */
 
@@ -131,7 +131,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWiFiNetwork (ARNETWORKAL_Manager_t *m
     return error;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWiFiNetwork (ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork (ARNETWORKAL_Manager_t *manager)
 {
     /** -- Close the Wifi Network -- */
 
