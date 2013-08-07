@@ -1,0 +1,65 @@
+/**
+ * @mainpage
+ *
+ * @section intro_sec Introduction
+ *
+ * The ARNetworkAL library is an abstraction layer interface over different
+ * types of networks (wifi, bluetooth ...)
+ *
+ * @section api_sec API
+ *
+ * An @ref ARNETWORKAL_Manager_t object is created using
+ * @ref ARNETWORKAL_Manager_New, then initialized using one of the
+ * ARNETWORKAL_Manager_InitXXXXNetwork functions
+ * (@ref ARNETWORKAL_Manager_InitWifiNetwork,
+ * @ref ARNETWORKAL_Manager_InitBLENetwork).
+ *
+ * The typical use of an @ref ARNETWORKAL_Manager_t object is to pass it to
+ * @ref ARNETWORK_Manager_New, to create a working network manager.
+ * @see ARNETWORK Documentation
+ *
+ * When no longer used, the object is freed using one of the
+ * ARNETWORKAL_Manager_CloseXXXXNetwork functions
+ * (@ref ARNETWORKAL_Manager_CloseWifiNetwork,
+ * @ref ARNETWORKAL_Manager_CloseBLENetwork)
+ *
+ * @subsection details_subsec API Details (When not using ARNetwork library)
+ *
+ * An @ref ARNETWORKAL_Manager_t object, when properly initialized, provides
+ * 4 different callbacks to abstract the undelying network.
+ *
+ * @subsubsection sending_subsubsec Sending data
+ *
+ * @ref ARNETWORKAL_Manager_PushNextFrame_Callback_t function is called every
+ * time the application wants to add an @ref ARNETWORKAL_Frame_t to the send
+ * queue. On certain networks, this function might also trigger the actual
+ * send.
+ *
+ * @ref ARNETWORKAL_Manager_Sending_Callback_t function is called by the
+ * application when it wants the send queue to be sent on the network. On
+ * certain networks, this function is a no-op.
+ *
+ * @subsubsection receiving_subsubsec Receiving data
+ *
+ * @ref ARNETWORKAL_Manager_Receiving_Callback_t function triggers a network
+ * read. This is typically a blocking (with timeout) function which will clock
+ * the calls to the following callback.
+ *
+ * @ref ARNETWORKAL_Manager_PopNextFrame_Callback_t function reads one
+ * available @ref ARNETWORKAL_Frame_t from the @ref ARNETWORKAL_Manager_t
+ * reading buffer. This function can be called in a loop until it returns
+ * @ref ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE
+ *
+ * @section support_sec Supported network types
+ *
+ * The library currently support two types of networks:
+ *
+ * Wifi Network: While named after Wifi (its most frequent use case), this
+ * network type works on any UDP/IP network (Ethernet, WWAN ...). This type
+ * is available on all implementations of ARNetworkAL
+ *
+ * BLE Network: BLE Network type is not available on all platforms (currently
+ * only available on iOS). It uses Bluetooth 4.0 (Bluetooth Low Energy), which
+ * is used on some ARSDK products
+ *
+ */
