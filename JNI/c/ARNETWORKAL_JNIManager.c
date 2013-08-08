@@ -1,8 +1,8 @@
 /**
- *  @file ARNETWORKAL_JNIManager.c
- *  @brief JNI between the ARNETWORK_Manager.h and ARNETWORKAL_Manager.java
- *  @date 04/29/2013
- *  @author frederic.dhaeyer@parrot.com
+ * @file ARNETWORKAL_JNIManager.c
+ * @brief JNI between the ARNETWORK_Manager.h and ARNETWORKAL_Manager.java
+ * @date 04/29/2013
+ * @author frederic.dhaeyer@parrot.com
  **/
 
 /*****************************************
@@ -28,13 +28,13 @@
 #define ARNETWORKAL_JNIMANAGER_TAG "ARNETWORKAL_JNIManager" /** tag used by the print of the file */
 
 /**
- *  @brief call back use when the data are sent or have a timeout
- *  @param[in] IOBufferID identifier of the IoBuffer is calling back
- *  @param[in] dataPtr pointer on the data
- *  @param[in] customData pointer on a custom data
- *  @param[in] status indicating the reason of the callback. eARNETWORK_MANAGER_CALLBACK_STATUS type
- *  @return eARNETWORK_MANAGER_CALLBACK_RETURN
- *  @see eARNETWORK_MANAGER_CALLBACK_STATUS
+ * @brief call back use when the data are sent or have a timeout
+ * @param[in] IOBufferID identifier of the IoBuffer is calling back
+ * @param[in] dataPtr pointer on the data
+ * @param[in] customData pointer on a custom data
+ * @param[in] status indicating the reason of the callback. eARNETWORK_MANAGER_CALLBACK_STATUS type
+ * @return eARNETWORK_MANAGER_CALLBACK_RETURN
+ * @see eARNETWORK_MANAGER_CALLBACK_STATUS
  **/
 //eARNETWORK_MANAGER_CALLBACK_RETURN ARNETWORKAL_JNIManger_Callback_t(int IOBufferID,  uint8_t *dataPtr, void *customData, eARNETWORK_MANAGER_CALLBACK_STATUS status);
 
@@ -48,11 +48,11 @@
 JavaVM* gARNETWORKAL_JNIManager_VM = NULL; /** reference to the java virtual machine */
 
 /**
- *  @brief save the reference to the java virtual machine
- *  @note this function is automatically call on the JNI startup
- *  @param[in] VM reference to the java virtual machine
- *  @param[in] reserved data reserved
- *  @return JNI version
+ * @brief save the reference to the java virtual machine
+ * @note this function is automatically call on the JNI startup
+ * @param[in] VM reference to the java virtual machine
+ * @param[in] reserved data reserved
+ * @return JNI version
  **/
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *VM, void *reserved)
@@ -67,15 +67,15 @@ JNI_OnLoad(JavaVM *VM, void *reserved)
 }
 
 /**
- *  @brief Create a new manager
- *  @warning This function allocate memory
- *  @param env reference to the java environment
- *  @param obj reference to the object calling this function
- *  @return Pointer on the ARNETWORKAL_Manager_t.
- *  @note This creator adds for all output, one other IOBuffer for storing the acknowledgment to return.
+ * @brief Create a new manager
+ * @warning This function allocate memory
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @return Pointer on the ARNETWORKAL_Manager_t.
+ * @note This creator adds for all output, one other IOBuffer for storing the acknowledgment to return.
  * These new buffers are added in the input and output buffer arrays.
- *  @warning The identifiers of the IoBuffer should not exceed the value 128.
- *  @see Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeDelete()
+ * @warning The identifiers of the IoBuffer should not exceed the value 128.
+ * @see Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeDelete()
  *
  **/
 JNIEXPORT jlong JNICALL
@@ -96,12 +96,12 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeNew(JNIEnv *env, jobj
 }
 
 /**
- *  @brief Delete the Manager
- *  @warning This function free memory
- *  @param env reference to the java environment
- *  @param obj reference to the object calling this function
- *  @param jManager adress of the ARNETWORKAL_Manager_t
- *  @see Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeNew()
+ * @brief Delete the Manager
+ * @warning This function free memory
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager adress of the ARNETWORKAL_Manager_t
+ * @see Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeNew()
  **/
 JNIEXPORT void JNICALL
 Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeDelete(JNIEnv *env, jobject obj, jlong jManager)
@@ -113,15 +113,15 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeDelete(JNIEnv *env, j
 }
 
 /**
- *  @brief initialize Wifi network for sending and receiving the data.
- *  @param env reference to the java environment
- *  @param obj reference to the object calling this function
- *  @param jManagerPtr address of the ARNETWORKAL_Manager_t
- *  @param[in] jaddr address of connection at which the data will be sent.
- *  @param[in] sendingPort port on which the data will be sent.
- *  @param[in] recvPort port on which the data will be received.
- *  @param[in] recvTimeoutSec timeout in seconds set on the socket to limit the time of blocking of the function ARNETWORK_Receiver_Read().
- *  @return error equal to ARNETWORKAL_OK if the Bind if successful otherwise see eARNETWORKAL_ERROR.
+ * @brief initialize Wifi network for sending and receiving the data.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManagerPtr address of the ARNETWORKAL_Manager_t
+ * @param[in] jaddr address of connection at which the data will be sent.
+ * @param[in] sendingPort port on which the data will be sent.
+ * @param[in] recvPort port on which the data will be received.
+ * @param[in] recvTimeoutSec timeout in seconds set on the socket to limit the time of blocking of the function ARNETWORK_Receiver_Read().
+ * @return error equal to ARNETWORKAL_OK if the Bind if successful otherwise see eARNETWORKAL_ERROR.
  **/
 JNIEXPORT jint JNICALL
 Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitWifiNetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jstring jaddr, jint sendingPort, jint recvPort, jint recvTimeoutSec)

@@ -1,8 +1,8 @@
 /**
- *  @file  ARNETWORKAL_BLEManager.h
- *  @brief private headers of BLE manager allow to use Bluetooth low energy api's
- *  @date 06/11/2013
- *  @author frederic.dhaeyer@parrot.com
+ * @file  ARNETWORKAL_BLEManager.h
+ * @brief private headers of BLE manager allow to use Bluetooth low energy api's
+ * @date 06/11/2013
+ * @author frederic.dhaeyer@parrot.com
  */
 
 #ifndef _ARNETWORKAL_BLEMANAGER_PRIVATE_H_

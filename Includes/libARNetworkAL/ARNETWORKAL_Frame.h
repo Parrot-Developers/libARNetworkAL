@@ -1,8 +1,8 @@
 /**
- *  @file ARNETWORKAL_Frame.h
- *  @brief define the network frame protocol
- *  @date 04/30/2013
- *  @author maxime.maitre@parrot.com
+ * @file ARNETWORKAL_Frame.h
+ * @brief define the network frame protocol
+ * @date 04/30/2013
+ * @author maxime.maitre@parrot.com
  */
 
 #ifndef _ARNETWORKAL_FRAME_H_
@@ -11,7 +11,7 @@
 #include <inttypes.h>
 
 /**
- *  @brief type of frame send by the ARNETWORKAL_Manager
+ * @brief type of frame send by the ARNETWORKAL_Manager
  */
 typedef enum
 {
@@ -24,7 +24,7 @@ typedef enum
 }eARNETWORKAL_FRAME_TYPE;
 
 /**
- *  @brief frame send by the ARNETWORKAL_Manager
+ * @brief frame send by the ARNETWORKAL_Manager
  */
 typedef struct
 {

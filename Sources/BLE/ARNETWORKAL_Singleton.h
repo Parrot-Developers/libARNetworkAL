@@ -1,8 +1,8 @@
 /**
- *  @file  ARNETWORKAL_Singleton.h
- *  @brief headers to define singletons.
- *  @date 06/11/2013
- *  @author frederic.dhaeyer@parrot.com
+ * @file  ARNETWORKAL_Singleton.h
+ * @brief headers to define singletons.
+ * @date 06/11/2013
+ * @author frederic.dhaeyer@parrot.com
  */
 
 #ifndef _ARNETWORKAL_SINGLETON_PRIVATE_H_

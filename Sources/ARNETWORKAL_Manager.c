@@ -1,8 +1,8 @@
 /**
- *  @file ARNETWORKAL_Manager.c
- *  @brief network manager allow to send over network.
- *  @date 25/04/2013
- *  @author frederic.dhaeyer@parrot.com
+ * @file ARNETWORKAL_Manager.c
+ * @brief network manager allow to send over network.
+ * @date 25/04/2013
+ * @author frederic.dhaeyer@parrot.com
  */
 
 /*****************************************
