@@ -1,5 +1,5 @@
 /**
- * @mainpage
+ * @mainpage libARNetworkAL Documentation
  *
  * @section AL_intro_sec Introduction
  *
@@ -15,8 +15,8 @@
  * @ref ARNETWORKAL_Manager_InitBLENetwork).
  *
  * The typical use of an @ref ARNETWORKAL_Manager_t object is to pass it to
- * @ref ARNETWORK_Manager_New, to create a working network manager.
- * @see ARNETWORK Documentation
+ * ARNETWORK_Manager_New, to create a working network manager.
+ * @see <a href="../../libARNetwork/html/index.html" target="_blank">ARNetwork Documentation</a>
  *
  * When no longer used, the connection is closed using one of the
  * ARNETWORKAL_Manager_CloseXXXXNetwork functions

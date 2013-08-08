@@ -131,10 +131,10 @@ void ARNETWORKAL_Manager_Delete(ARNETWORKAL_Manager_t **manager);
 /**
  * @brief initialize Wifi network.
  * @param manager pointer on the Manager
- * @param[in] addr address of connection at which the data will be sent.
+ * @param[in] addr IP address of connection at which the data will be sent.
  * @param[in] sendingPort port on which the data will be sent.
  * @param[in] receivingPort port on which the data will be received.
- * @param[in] recvTimeoutSec timeout in seconds set to limit the time of blocking of the Receiving function.
+ * @param[in] recvTimeoutSec timeout in seconds set to limit the time of blocking of the Receive function.
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork(ARNETWORKAL_Manager_t *manager, const char *addr, int sendingPort, int receivingPort, int recvTimeoutSec);
@@ -149,6 +149,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork(ARNETWORKAL_Manager_t *m
 /**
  * @brief initialize BLE network.
  * @param manager pointer on the Manager
+ * @param deviceManager the OS device manager which will be used for network functions
+ * @param device the selected OS specific BLE device to connect to
+ * @param recvTimeoutSec timeout in seconds set to limit the time of blocking of the Receive function.
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
