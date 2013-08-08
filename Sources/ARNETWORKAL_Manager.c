@@ -62,10 +62,10 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     if (manager != NULL)
     {
         /** Initialize to default values */
-        manager->pushNextFrameCallback = (ARNETWORKAL_Manager_PushNextFrame_Callback_t)NULL;
-        manager->popNextFrameCallback = (ARNETWORKAL_Manager_PopNextFrame_Callback_t)NULL;
-        manager->sendingCallback = (ARNETWORKAL_Manager_Sending_Callback_t)NULL;
-        manager->receivingCallback = (ARNETWORKAL_Manager_Receiving_Callback_t)NULL;
+        manager->pushFrame = (ARNETWORKAL_Manager_PushFrame_t)NULL;
+        manager->popFrame = (ARNETWORKAL_Manager_PopFrame_t)NULL;
+        manager->send = (ARNETWORKAL_Manager_Send_t)NULL;
+        manager->receive = (ARNETWORKAL_Manager_Receive_t)NULL;
         manager->receiverObject = (void *)NULL;
         manager->senderObject = (void *)NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
@@ -121,10 +121,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
 
     if(error == ARNETWORKAL_OK)
     {
-        manager->pushNextFrameCallback = ARNETWORKAL_WifiNetwork_pushNextFrameCallback;
-        manager->popNextFrameCallback = ARNETWORKAL_WifiNetwork_popNextFrameCallback;
-        manager->sendingCallback = ARNETWORKAL_WifiNetwork_sendingCallback;
-        manager->receivingCallback = ARNETWORKAL_WifiNetwork_receivingCallback;
+        manager->pushFrame = ARNETWORKAL_WifiNetwork_PushFrame;
+        manager->popFrame = ARNETWORKAL_WifiNetwork_PopFrame;
+        manager->send = ARNETWORKAL_WifiNetwork_Send;
+        manager->receive = ARNETWORKAL_WifiNetwork_Receive;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
     }
 
@@ -176,10 +176,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
 
     if(error == ARNETWORKAL_OK)
     {
-        manager->pushNextFrameCallback = ARNETWORKAL_BLENetwork_pushNextFrameCallback;
-        manager->popNextFrameCallback = ARNETWORKAL_BLENetwork_popNextFrameCallback;
-        manager->sendingCallback = ARNETWORKAL_BLENetwork_sendingCallback;
-        manager->receivingCallback = ARNETWORKAL_BLENetwork_receivingCallback;
+        manager->pushFrame = ARNETWORKAL_BLENetwork_PushFrame;
+        manager->popFrame = ARNETWORKAL_BLENetwork_PopFrame;
+        manager->send = ARNETWORKAL_BLENetwork_Send;
+        manager->receive = ARNETWORKAL_BLENetwork_Receive;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
 

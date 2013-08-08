@@ -1,8 +1,8 @@
 /**
- *  @file ARNETWORKAL_WifiNetwork.c
- *  @brief wifi network manager allow to send over wifi network.
- *  @date 25/04/2013
- *  @author frederic.dhaeyer@parrot.com
+ * @file ARNETWORKAL_WifiNetwork.c
+ * @brief wifi network manager allow to send over wifi network.
+ * @date 25/04/2013
+ * @author frederic.dhaeyer@parrot.com
  */
 
 /*****************************************
@@ -277,16 +277,16 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
     return error;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_pushNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     if((((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size + frame->size) > ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE)
     {
-        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_FULL;
+        result = ARNETWORKAL_MANAGER_RETURN_BUFFER_FULL;
     }
 
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         uint32_t droneEndianUInt32 = 0;
 
@@ -321,9 +321,9 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_pushNextFrameCallba
     return result;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_popNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     /** -- get a Frame of the receiving buffer -- */
     /** if the receiving buffer not contain enough data for the frame head*/
@@ -331,15 +331,15 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_popNextFrameCallbac
     {
         if (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame == (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size))
         {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY;
+            result = ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY;
         }
         else
         {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+            result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
     }
 
-    if (result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if (result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         /** Get the frame from the buffer */
         /** get type */
@@ -366,11 +366,11 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_popNextFrameCallbac
         /** if the receiving buffer not contain enough data for the full frame */
         if (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame > ((((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size) - (frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr))))
         {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+            result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
     }
 
-    if (result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if (result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         /** offset the readingPointer on the next frame */
         ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame + frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
@@ -392,9 +392,9 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_popNextFrameCallbac
     return result;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_sendingCallback(ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *manager)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size != 0)
     {
@@ -406,9 +406,9 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_sendingCallback(ARN
     return result;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_receivingCallback(ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_t *manager)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     /** -- receiving data present on the socket -- */
     /** local declarations */
@@ -421,7 +421,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_WifiNetwork_receivingCallback(A
     }
     else
     {
-        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE;
+        result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
         ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size = 0;
     }
 

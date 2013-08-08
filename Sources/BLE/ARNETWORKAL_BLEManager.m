@@ -20,24 +20,24 @@
 - (NSString *)representativeString;
 {
     NSData *data = [self data];
-    
+
     NSUInteger bytesToConvert = [data length];
     const unsigned char *uuidBytes = [data bytes];
     NSMutableString *outputString = [NSMutableString stringWithCapacity:16];
-    
+
     for (NSUInteger currentByteIndex = 0; currentByteIndex < bytesToConvert; currentByteIndex++)
     {
         switch (currentByteIndex)
         {
-            case 3:
-            case 5:
-            case 7:
-            case 9:[outputString appendFormat:@"%02x-", uuidBytes[currentByteIndex]]; break;
-            default:[outputString appendFormat:@"%02x", uuidBytes[currentByteIndex]];
+        case 3:
+        case 5:
+        case 7:
+        case 9:[outputString appendFormat:@"%02x-", uuidBytes[currentByteIndex]]; break;
+        default:[outputString appendFormat:@"%02x", uuidBytes[currentByteIndex]];
         }
-        
+
     }
-    
+
     return outputString;
 }
 @end
@@ -63,14 +63,14 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     self.discoverServicesError = nil;
     self.discoverCharacteristicsError = nil;
     self.characteristicsNotifications = [NSMutableArray array];
-    
+
     ARSAL_Sem_Init(&connectionSem, 0, 0);
     ARSAL_Sem_Init(&disconnectionSem, 0, 0);
     ARSAL_Sem_Init(&discoverServicesSem, 0, 0);
     ARSAL_Sem_Init(&discoverCharacteristicsSem, 0, 0);
     ARSAL_Sem_Init(&readCharacteristicsSem, 0, 0);
     ARSAL_Sem_Init(&configurationSem, 0, 0);
-    
+
     ARSAL_Mutex_Init(&readCharacteristicMutex);
 }
 
@@ -86,7 +86,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         result = (self.discoverServicesError == nil);
         self.discoverServicesError = nil;
     }
-    
+
     return result;
 }
 
@@ -102,7 +102,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         result = (self.configurationCharacteristicError == nil);
         self.configurationCharacteristicError = nil;
     }
-    
+
     return result;
 }
 
@@ -119,7 +119,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         result = (self.discoverCharacteristicsError == nil);
         self.discoverCharacteristicsError = nil;
     }
-    
+
     return result;
 }
 
@@ -134,7 +134,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         [self disconnectPeripheral:self.activePeripheral withCentralManager:centralManager];
         ARSAL_Sem_Wait(&disconnectionSem);
     }
-    
+
     // Connection to the new peripheral
     self.activePeripheral = nil;
     [centralManager connectPeripheral:peripheral options:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], CBConnectPeripheralOptionNotifyOnDisconnectionKey, nil]];
@@ -142,7 +142,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     self.activePeripheral = peripheral;
     self.activePeripheral.delegate = self;
     [centralManager setDelegate:previousDelegate];
-    
+
     return (self.activePeripheral != nil);
 }
 
@@ -152,15 +152,15 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     {
         id <CBCentralManagerDelegate> previousDelegate = centralManager.delegate;
         [centralManager setDelegate:self];
-        
+
         [centralManager cancelPeripheralConnection:activePeripheral];
         ARSAL_Sem_Wait(&disconnectionSem);
         self.activePeripheral.delegate = nil;
         self.activePeripheral = nil;
-        
+
         [centralManager setDelegate:previousDelegate];
     }
-    
+
     return (self.activePeripheral == nil);
 }
 
@@ -172,7 +172,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         [self.activePeripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithoutResponse];
         result = YES;
     }
-    
+
     return result;
 }
 
@@ -183,7 +183,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     NSLog(@"%s:%d", __FUNCTION__, __LINE__);
 #endif
     ARSAL_Sem_Wait(&readCharacteristicsSem);
-    
+
     if([self.characteristicsNotifications count] > 0)
     {
         ARSAL_Mutex_Lock(&readCharacteristicMutex);
@@ -192,7 +192,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         ARSAL_Mutex_Unlock(&readCharacteristicMutex);
         result = YES;
     }
-    
+
     return result;
 }
 
@@ -204,30 +204,30 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #endif
     switch(central.state)
     {
-        case CBCentralManagerStatePoweredOn:
-            NSLog(@"CBCentralManagerStatePoweredOn");
-            break;
-            
-        case CBCentralManagerStateResetting:
-            NSLog(@"CBCentralManagerStateResetting");
-            break;
-            
-        case CBCentralManagerStateUnsupported:
-            NSLog(@"CBCentralManagerStateUnsupported");
-            break;
-            
-        case CBCentralManagerStateUnauthorized:
-            NSLog(@"CBCentralManagerStateUnauthorized");
-            break;
-            
-        case CBCentralManagerStatePoweredOff:
-            NSLog(@"CBCentralManagerStatePoweredOff");
-            break;
-            
-        default:
-        case CBCentralManagerStateUnknown:
-            NSLog(@"CBCentralManagerStateUnknown");
-            break;
+    case CBCentralManagerStatePoweredOn:
+        NSLog(@"CBCentralManagerStatePoweredOn");
+        break;
+
+    case CBCentralManagerStateResetting:
+        NSLog(@"CBCentralManagerStateResetting");
+        break;
+
+    case CBCentralManagerStateUnsupported:
+        NSLog(@"CBCentralManagerStateUnsupported");
+        break;
+
+    case CBCentralManagerStateUnauthorized:
+        NSLog(@"CBCentralManagerStateUnauthorized");
+        break;
+
+    case CBCentralManagerStatePoweredOff:
+        NSLog(@"CBCentralManagerStatePoweredOff");
+        break;
+
+    default:
+    case CBCentralManagerStateUnknown:
+        NSLog(@"CBCentralManagerStateUnknown");
+        break;
     }
 }
 
@@ -286,11 +286,11 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, [characteristic.UUID representativeString], [error localizedDescription]);
 #endif
-    
+
     ARSAL_Mutex_Lock(&readCharacteristicMutex);
     [self.characteristicsNotifications addObject:characteristic];
     ARSAL_Mutex_Unlock(&readCharacteristicMutex);
-    
+
     ARSAL_Sem_Post(&readCharacteristicsSem);
 }
 
