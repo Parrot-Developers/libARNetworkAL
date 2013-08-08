@@ -151,17 +151,17 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
     return error;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_PushFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     // first uint8_t is frame type and second uint8_t is sequence number
     if((frame->size - offsetof(ARNETWORKAL_Frame_t, dataPtr) + (2 * sizeof(uint8_t))) > ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE)
     {
-        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+        result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
     }
 
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         NSMutableData *data = [NSMutableData dataWithCapacity:0];
 
@@ -188,34 +188,34 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallbac
 
         if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
         {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+            result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
     }
 
     return result;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_PopFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     CBCharacteristic *characteristic = nil;
     /** -- get a Frame of the receiving buffer -- */
     /** if the receiving buffer not contain enough data for the frame head*/
     if([((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array count] == 0)
     {
-        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY;
+        result = ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY;
     }
 
-    if (result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if (result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         characteristic = [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array objectAtIndex:0];
         if([[characteristic value] length] == 0)
         {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+            result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
     }
 
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         uint8_t *currentFrame = (uint8_t *)[[characteristic value] bytes];
 
@@ -223,10 +223,10 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
         int frameId = 0;
         if(sscanf([[[characteristic UUID] representativeString] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
         {
-            result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_FRAME;
+            result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
 
-        if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+        if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
         {
 
             /** Get the frame from the buffer */
@@ -250,12 +250,12 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
         }
     }
 
-    if(result != ARNETWORKAL_MANAGER_CALLBACK_RETURN_BUFFER_EMPTY)
+    if(result != ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY)
     {
         [((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array removeObjectAtIndex:0];
     }
 
-    if (result != ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if (result != ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         /** reset frame */
         frame->type = ARNETWORKAL_FRAME_TYPE_UNINITIALIZED;
@@ -268,18 +268,18 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback
     return result;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_sendingCallback(ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Send(ARNETWORKAL_Manager_t *manager)
 {
-    return ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    return ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 }
 
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Receive(ARNETWORKAL_Manager_t *manager)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) readData:((ARNETWORKAL_BLENetworkObject *)manager->receiverObject)->array])
     {
-        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_NO_DATA_AVAILABLE;
+        result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
     }
 
     return result;
@@ -287,7 +287,7 @@ eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(AR
 
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
 {
-    eARNETWORKAL_MANAGER_CALLBACK_RETURN result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT;
+    eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     CBCentralManager *centralManager = (CBCentralManager *)deviceManager;
     CBPeripheral *peripheral = (CBPeripheral *)device;
     CBService *senderService = nil;
@@ -295,10 +295,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
 
     if(peripheral == nil)
     {
-        result = ARNETWORKAL_MANAGER_CALLBACK_RETURN_BAD_PARAMETERS;
+        result = ARNETWORKAL_MANAGER_RETURN_BAD_PARAMETERS;
     }
 
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) connectToPeripheral:peripheral withCentralManager:centralManager])
         {
@@ -306,7 +306,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
         }
     }
 
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         if([SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkServices:nil])
         {
@@ -346,7 +346,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
         }
     }
 
-    if(result == ARNETWORKAL_MANAGER_CALLBACK_RETURN_DEFAULT)
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         NSLog(@"Sender service : %@", [senderService.UUID representativeString]);
         NSLog(@"Receiver service : %@", [receiverService.UUID representativeString]);

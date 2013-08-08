@@ -32,31 +32,31 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
  *  @brief Callback defines to push next frame to send to Network.
  *  @param[in] manager address of the pointer on the Manager
  *	@param[in] frame frame to push
- *  @return error equal to ARNETWORKAL_MANAGER_CALLBACK_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_CALLBACK_RETURN.
+ *  @return error equal to ARNETWORKAL_MANAGER_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_RETURN.
  **/
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_pushNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame);
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_PushFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame);
 
 /**
  *  @brief Callback defines to pop next frame received from Network.
  *  @param[in] manager address of the pointer on the Manager
  *	@param[in] frame frame to pop
- *  @return error equal to ARNETWORKAL_MANAGER_CALLBACK_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_CALLBACK_RETURN.
+ *  @return error equal to ARNETWORKAL_MANAGER_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_RETURN.
  **/
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_popNextFrameCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame);
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_PopFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame);
 
 /**
  *  @brief Callback defines to send all frames to Network.
  *  @param[in] manager address of the pointer on the Manager
- *  @return error equal to ARNETWORKAL_MANAGER_CALLBACK_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_CALLBACK_RETURN.
+ *  @return error equal to ARNETWORKAL_MANAGER_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_RETURN.
  **/
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_sendingCallback(ARNETWORKAL_Manager_t *manager);
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Send(ARNETWORKAL_Manager_t *manager);
 
 /**
  *  @brief Callback defines to receive frames from Network.
  *  @param[in] manager address of the pointer on the Manager
- *  @return error equal to ARNETWORKAL_MANAGER_CALLBACK_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_CALLBACK_RETURN.
+ *  @return error equal to ARNETWORKAL_MANAGER_DEFAULT if the the next frame pushed on success otherwise error in eARNETWORKAL_MANAGER_RETURN.
  **/
-eARNETWORKAL_MANAGER_CALLBACK_RETURN ARNETWORKAL_BLENetwork_receivingCallback(ARNETWORKAL_Manager_t *manager);
+eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Receive(ARNETWORKAL_Manager_t *manager);
 
 /**
  *  @brief Connect to a BLE device.
