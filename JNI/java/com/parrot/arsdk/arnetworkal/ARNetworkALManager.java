@@ -12,6 +12,7 @@ public class ARNetworkALManager
     private native long nativeNew();
     private native int nativeDelete(long jManager);
     private native int nativeInitWifiNetwork(long jManager, String jaddr, int sendingPort, int receivingPort, int recvTimeoutSec);
+    private native int nativeCloseWifiNetwork(long jManager);
 
     private long m_managerPtr;
     private boolean m_initOk;
@@ -82,6 +83,17 @@ public class ARNetworkALManager
             error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
 
+        return error;
+    }
+
+    /**
+     * Closes Wifi network
+     */
+    public ARNETWORKAL_ERROR_ENUM closeWifiNetwork()
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeCloseWifiNetwork(m_managerPtr);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }
 }

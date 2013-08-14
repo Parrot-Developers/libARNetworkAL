@@ -27,17 +27,6 @@
 
 #define ARNETWORKAL_JNIMANAGER_TAG "ARNETWORKAL_JNIManager" /** tag used by the print of the file */
 
-/**
- * @brief call back use when the data are sent or have a timeout
- * @param[in] IOBufferID identifier of the IoBuffer is calling back
- * @param[in] dataPtr pointer on the data
- * @param[in] customData pointer on a custom data
- * @param[in] status indicating the reason of the callback. eARNETWORK_MANAGER_CALLBACK_STATUS type
- * @return eARNETWORK_MANAGER_CALLBACK_RETURN
- * @see eARNETWORK_MANAGER_CALLBACK_STATUS
- **/
-//eARNETWORK_MANAGER_CALLBACK_RETURN ARNETWORKAL_JNIManger_Callback_t(int IOBufferID,  uint8_t *dataPtr, void *customData, eARNETWORK_MANAGER_CALLBACK_STATUS status);
-
 /*****************************************
  *
  *             implementation :
@@ -45,11 +34,11 @@
  ******************************************/
 
 
-JavaVM* gARNETWORKAL_JNIManager_VM = NULL; /** reference to the java virtual machine */
+JavaVM *ARNETWORKAL_JNIManager_VM = NULL; /** reference to the java virtual machine */
 
 /**
  * @brief save the reference to the java virtual machine
- * @note this function is automatically call on the JNI startup
+ * @note this function is automatically called on the JNI startup
  * @param[in] VM reference to the java virtual machine
  * @param[in] reserved data reserved
  * @return JNI version
@@ -60,7 +49,7 @@ JNI_OnLoad(JavaVM *VM, void *reserved)
     ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, "Library has been loaded");
 
     /** Saving the reference to the java virtual machine */
-    gARNETWORKAL_JNIManager_VM = VM;
+    ARNETWORKAL_JNIManager_VM = VM;
 
     /** Return the JNI version */
     return JNI_VERSION_1_6;
@@ -121,7 +110,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeDelete(JNIEnv *env, j
  * @param[in] sendingPort port on which the data will be sent.
  * @param[in] recvPort port on which the data will be received.
  * @param[in] recvTimeoutSec timeout in seconds set on the socket to limit the time of blocking of the function ARNETWORK_Receiver_Read().
- * @return error equal to ARNETWORKAL_OK if the Bind if successful otherwise see eARNETWORKAL_ERROR.
+ * @return error equal to ARNETWORKAL_OK if the init was successful otherwise see eARNETWORKAL_ERROR.
  **/
 JNIEXPORT jint JNICALL
 Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitWifiNetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jstring jaddr, jint sendingPort, jint recvPort, jint recvTimeoutSec)
@@ -135,6 +124,24 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitWifiNetwork(JNIEn
 
     error = ARNETWORKAL_Manager_InitWifiNetwork(manager, nativeString, sendingPort, recvPort, recvTimeoutSec);
     (*env)->ReleaseStringUTFChars( env, jaddr, nativeString );
+
+    return error;
+}
+
+/**
+ * @brief Closes Wifi network for sending and receiving the data.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManagerPtr address of the ARNETWORKAL_Manager_t
+ * @return error equal to ARNETWORKAL_OK if the close was successful otherwise see eARNETWORKAL_ERROR.
+ **/
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseWifiNetwork(JNIEnv *env, jobject obj, jlong jManagerPtr)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    error = ARNETWORKAL_Manager_CloseWifiNetwork(manager);
 
     return error;
 }
