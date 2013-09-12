@@ -12,6 +12,7 @@ public class ARNetworkALManager
     private native long nativeNew();
     private native int nativeDelete(long jManager);
     private native int nativeInitWifiNetwork(long jManager, String jaddr, int sendingPort, int receivingPort, int recvTimeoutSec);
+    private native int nativeSignalWifiNetwork(long jManager);
     private native int nativeCloseWifiNetwork(long jManager);
 
     private long m_managerPtr;
@@ -83,6 +84,17 @@ public class ARNetworkALManager
             error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
 
+        return error;
+    }
+
+    /**
+     * Signal the wifi network to unblock all waiting functions
+     */
+    public ARNETWORKAL_ERROR_ENUM signalWifiNetwork()
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSignalWifiNetwork(m_managerPtr);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }
 
