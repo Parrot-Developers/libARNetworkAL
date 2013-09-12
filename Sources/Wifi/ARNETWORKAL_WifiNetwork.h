@@ -14,11 +14,18 @@
  * @brief Create a new WifiNetwork object.
  * @warning This function allocate memory
  * @post ARNETWORKAL_WifiNetwork_Delete() must be called to delete the wifi network and free the memory allocated.
- * @param[in] manager address of the pointer on the Manager
+ * @param[in] manager pointer on the Manager
  * @return eARNETWORKAL_ERROR
  * @see ARNETWORKAL_WifiNetwork_Delete()
  */
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager);
+
+/**
+ * @brief Signal the Manager to stop all sockets blocking operations
+ * @param[in] manager pointer on the Manager
+ * @return eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Signal(ARNETWORKAL_Manager_t *manager);
 
 /**
  * @brief Delete the WifiNetwork

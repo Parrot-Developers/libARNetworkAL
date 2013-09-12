@@ -47,6 +47,7 @@ typedef enum
     ARNETWORKAL_MANAGER_RETURN_BAD_FRAME, /**< Impossible to pop a frame, frame is corrupted */
     ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE, /**< Impossible to read data from the network, no data available */
     ARNETWORKAL_MANAGER_RETURN_BAD_PARAMETERS, /**< Parameters given to the callback were not good */
+    ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR, /**< Network error while reading or sending data */
 } eARNETWORKAL_MANAGER_RETURN;
 
 /**
@@ -138,6 +139,16 @@ void ARNETWORKAL_Manager_Delete(ARNETWORKAL_Manager_t **manager);
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork(ARNETWORKAL_Manager_t *manager, const char *addr, int sendingPort, int receivingPort, int recvTimeoutSec);
+
+/**
+ * @brief force timeout on Wifi network
+ * When this function is called, all the functions that are blocked on sockets are immediately unblocked.
+ * A typical use case is when the ARNETWORK library is closing: The threads must be joined before calling
+ * @ref ARNETWORKAL_Manager_CloseWifiNetwork, but the threads might be waiting for an ARNETWORKAL timeout.
+ * @param manager pointer on the Manager
+ * @return Any possible error code (see @ref eARNETWORKAL_ERROR)
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SignalWifiNetwork(ARNETWORKAL_Manager_t *manager);
 
 /**
  * @brief close Wifi network.

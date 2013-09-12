@@ -17,6 +17,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/select.h>
 
 #include <libARSAL/ARSAL_Socket.h>
 #include <libARSAL/ARSAL_Print.h>
@@ -45,9 +47,11 @@
 typedef struct _ARNETWORKAL_WifiNetworkObject_
 {
     int socket;
+    int fifo[2];
     uint8_t *buffer;
     uint8_t *currentFrame;
     uint32_t size;
+    uint32_t timeoutSec;
 } ARNETWORKAL_WifiNetworkObject;
 
 /*****************************************
@@ -72,6 +76,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         if(manager->senderObject != NULL)
         {
             ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket = -1;
+            ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[0] = -1;
+            ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[1] = -1;
         }
         else
         {
@@ -101,6 +107,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         if(manager->receiverObject != NULL)
         {
             ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket = -1;
+            ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[0] = -1;
+            ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[1] = -1;
         }
         else
         {
@@ -125,6 +133,37 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Signal(ARNETWORKAL_Manager_t *manager)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+
+    if (error == ARNETWORKAL_OK)
+    {
+        char * buff = "x";
+        if (manager->senderObject)
+        {
+            ARNETWORKAL_WifiNetworkObject *object = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+            if (object->fifo[1] != -1)
+            {
+                write (object->fifo[1], buff, 1);
+            }
+        }
+        if (manager->receiverObject)
+        {
+            ARNETWORKAL_WifiNetworkObject *object = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+            if (object->fifo[1] != -1)
+            {
+                write (object->fifo[1], buff, 1);
+            }
+        }
+    }
+    return error;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
@@ -140,6 +179,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
         {
             ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket);
 
+            close (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[0]);
+            close (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[1]);
+
             if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer)
             {
                 free (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer);
@@ -153,6 +195,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
         if(manager->receiverObject)
         {
             ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket);
+
+            close (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[0]);
+            close (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[1]);
 
             if(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer)
             {
@@ -186,9 +231,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     if(error == ARNETWORKAL_OK)
     {
         ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
-        if(manager->senderObject < 0)
+        if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket < 0)
         {
             error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
+        }
+        if (pipe(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo) != 0)
+        {
+            error = ARNETWORKAL_ERROR_FIFO_INIT;
         }
     }
 
@@ -243,6 +292,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
         {
             error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
         }
+        if (pipe(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo) != 0)
+        {
+            error = ARNETWORKAL_ERROR_FIFO_INIT;
+        }
+        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->timeoutSec = timeoutSec;
     }
 
     /** socket initialization */
@@ -395,12 +449,13 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager
 eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
+    ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
 
-    if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size != 0)
+    if(senderObject->size != 0)
     {
-        ARSAL_Socket_Send(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer, ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size, 0);
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size = 0;
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame = ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer;
+        ARSAL_Socket_Send(senderObject->socket, senderObject->buffer, senderObject->size, 0);
+        senderObject->size = 0;
+        senderObject->currentFrame = senderObject->buffer;
     }
 
     return result;
@@ -409,23 +464,72 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
 eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
+    ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
 
     /** -- receiving data present on the socket -- */
     /** local declarations */
 
-    int size = ARSAL_Socket_Recv (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket, ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer, ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE, 0);
+    // Create a fd_set to select on both the socket and the "cancel" pipe
+    fd_set set;
+    FD_ZERO (&set);
+    FD_SET (receiverObject->socket, &set);
+    FD_SET (receiverObject->fifo[0], &set);
+    // Get the max fd +1 for select call
+    int maxFd = (receiverObject->socket > receiverObject->fifo[0]) ? receiverObject->socket +1 : receiverObject->fifo[0] +1;
+    // Create the timeout object
+    struct timeval tv = { receiverObject->timeoutSec, 0 };
 
-    if (size > 0)
+    // Wait for either file to be reading for a read
+    int err = select (maxFd, &set, NULL, NULL, &tv);
+    if (err < 0)
     {
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size = size;
+        // Read error
+        result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
+        receiverObject->size = 0;
     }
     else
     {
-        result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size = 0;
+        // No read error (Timeout or FD ready)
+        if (FD_ISSET(receiverObject->socket, &set))
+        {
+            // If the socket is ready, read data
+            int size = ARSAL_Socket_Recv (receiverObject->socket, receiverObject->buffer, ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE, 0);
+            if (size > 0)
+            {
+                // Save the number of bytes read
+                receiverObject->size = size;
+            }
+            else if (size == 0)
+            {
+                // Should never go here (if the socket is ready, some data must be available)
+                // But the case in handled.
+                result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
+                receiverObject->size = 0;
+            }
+            else
+            {
+                // Error in recv call
+                result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
+                receiverObject->size = 0;
+            }
+        }
+        else
+        {
+            // If the socket is not ready, it is either a timeout or a signal
+            // In any case, report this as a "no data" call
+            result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
+            receiverObject->size = 0;
+        }
+
+        if (FD_ISSET(receiverObject->fifo[0], &set))
+        {
+            // If the fifo is ready for a read, dump bytes from it (so it won't be ready next time)
+            char dump[10];
+            read (receiverObject->fifo[0], &dump, 10);
+        }
     }
 
-    ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer;
+    receiverObject->currentFrame = receiverObject->buffer;
 
     return result;
 }

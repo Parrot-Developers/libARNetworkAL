@@ -131,6 +131,24 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SignalWifiNetwork(ARNETWORKAL_Manager_t *manager)
+{
+    /** -- Signals the Wifi Network to stop blocking on sockets -- */
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    if(manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+
+    if(error == ARNETWORKAL_OK)
+    {
+        error = ARNETWORKAL_WifiNetwork_Signal(manager);
+    }
+
+    return error;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork (ARNETWORKAL_Manager_t *manager)
 {
     /** -- Close the Wifi Network -- */

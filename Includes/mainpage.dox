@@ -67,5 +67,4 @@
  * BLE Network: BLE Network type is not available on all platforms (currently
  * only available on iOS). It uses Bluetooth 4.0 (Bluetooth Low Energy), which
  * is used on some ARSDK products
- *
  */

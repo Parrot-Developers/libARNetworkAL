@@ -17,6 +17,7 @@ typedef enum
     ARNETWORKAL_ERROR = -1000,                       /**< ARNetworkAL Generic error */
     ARNETWORKAL_ERROR_ALLOC,                         /**< Memory allocation error */
     ARNETWORKAL_ERROR_BAD_PARAMETER,                 /**< Bad parameters */
+    ARNETWORKAL_ERROR_FIFO_INIT,                     /**< Fifo creation error (details set in errno) */
 
     ARNETWORKAL_ERROR_MANAGER = -2000,               /**< Manager generic error */
 
@@ -31,7 +32,7 @@ typedef enum
     ARNETWORKAL_ERROR_BLE_DISCONNECTION,             /**< BLE disconnection error */
     ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING,       /**< BLE network services discovering error */
     ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING,       /**< BLE network services discovering error */
-    
+
 } eARNETWORKAL_ERROR;
 
 /**
