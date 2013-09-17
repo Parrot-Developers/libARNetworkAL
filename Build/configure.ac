@@ -24,10 +24,10 @@ AC_MSG_RESULT([$debugit])
 
 if test x"$debugit" = x"yes"; then
     AC_DEFINE([DEBUG],[],[Debug Mode])
-    CFLAGS+=" -g -Wall -Werror -Wno-uninitialized -O0"
+    LOCAL_CFLAGS+=" -g -Wall -Werror -Wno-uninitialized -O0"
 else
     AC_DEFINE([NDEBUG],[],[No-debug Mode])
-    CFLAGS+=" -O3"
+    LOCAL_CFLAGS+=" -O3"
 fi
 AM_CONDITIONAL([DEBUG_MODE], [test "$debugit" = "yes"])
 
@@ -97,15 +97,16 @@ AC_ARG_WITH([libARSALLibDir],
 # Define includes directories
 ##########################################################################
 # include local headers first
-CFLAGS+=" -I$srcdir/../Includes -I$srcdir/../Sources"
+LOCAL_CFLAGS+=" -I$srcdir/../Includes -I$srcdir/../Sources"
 
 # add the headers directory of libARSAL
 if test ! -z $libARSALIncludeDir; then
-  CFLAGS+=" -I$libARSALIncludeDir"
+  LOCAL_CFLAGS+=" -I$libARSALIncludeDir"
 fi
 
-CPPFLAGS="$CFLAGS"
-
+CPPFLAGS+="$LOCAL_CFLAGS"
+CFLAGS+="$LOCAL_CFLAGS"
+OBJCFLAGS+="$LOCAL_CFLAGS"
 ##########################################################################
 # Define binaries directories
 ##########################################################################
@@ -157,7 +158,6 @@ libARSAL/ARSAL_Socket.h libARSAL/ARSAL_Time.h],,
 
 # Check for CoreBluetooth.h
 AC_LANG_PUSH([Objective C])
-OBJCFLAGS+=" -std=gnu99 $CFLAGS"
 if test x$ac_cv_objc_compiler_gnu = xyes; then
     AC_CHECK_HEADERS([CoreBluetooth/CoreBluetooth.h], ,
         AC_MSG_WARN(The CoreBluetooth headers are required to use bluetooth features ! ))
