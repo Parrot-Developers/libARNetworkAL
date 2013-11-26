@@ -13,7 +13,7 @@
 
 #define ARNETWORKAL_MANAGER_DEFAULT_ID_MAX  256 /**< Default ID Max */
 #define ARNETWORKAL_MANAGER_WIFI_ID_MAX ARNETWORKAL_MANAGER_DEFAULT_ID_MAX /**< ID Max for WifiNetwork */
-#define ARNETWORKAL_MANAGER_BLE_ID_MAX  (ARNETWORKAL_MANAGER_DEFAULT_ID_MAX / 4) /**< ID Max for BLENetwork */
+#define ARNETWORKAL_MANAGER_BLE_ID_MAX  (ARNETWORKAL_MANAGER_DEFAULT_ID_MAX / 8) /**< ID Max for BLENetwork */
 
 /**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
@@ -84,6 +84,13 @@ typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_Send_t) (ARNETWORKAL_M
  */
 typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_Receive_t) (ARNETWORKAL_Manager_t *manager);
 
+/**
+ * @brief unlock all functions locked.
+ * this function is call by ARNetwork to permit to join its threads.
+ * @param manager The manager which should read from the network
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_Unlock_t) (ARNETWORKAL_Manager_t *manager);
 
 /**
  * @brief Fetches data from the last received network frame
@@ -109,6 +116,7 @@ struct ARNETWORKAL_Manager_t
     ARNETWORKAL_Manager_PopFrame_t popFrame; /**< Manager specific PopFrame function */
     ARNETWORKAL_Manager_Send_t send; /**< Manager specific send function */
     ARNETWORKAL_Manager_Receive_t receive; /**< Manager specific receive function */
+    ARNETWORKAL_Manager_Unlock_t unlock; /**< Manager specific unlock function */
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */

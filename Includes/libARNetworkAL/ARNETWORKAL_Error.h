@@ -21,8 +21,8 @@ typedef enum
 
     ARNETWORKAL_ERROR_MANAGER = -2000,               /**< Manager generic error */
 
-    ARNETWORKAL_ERROR_NETWORK,                       /**< Network generic error */
-    ARNETWORKAL_ERROR_UNKNOWN_NETWORK = -3000,       /**< Unknown network error */
+    ARNETWORKAL_ERROR_NETWORK = -3000,               /**< Network generic error */
+    ARNETWORKAL_ERROR_NETWORK_TYPE,                  /**< Network type, not available for the platform error */
 
     ARNETWORKAL_ERROR_WIFI = -4000,                  /**< Wifi generic error */
     ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION,          /**< Wifi socket error during creation */

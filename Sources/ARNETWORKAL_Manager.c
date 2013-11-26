@@ -66,6 +66,7 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
         manager->popFrame = (ARNETWORKAL_Manager_PopFrame_t)NULL;
         manager->send = (ARNETWORKAL_Manager_Send_t)NULL;
         manager->receive = (ARNETWORKAL_Manager_Receive_t)NULL;
+        manager->unlock = (ARNETWORKAL_Manager_Unlock_t)NULL;
         manager->receiverObject = (void *)NULL;
         manager->senderObject = (void *)NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
@@ -198,11 +199,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->popFrame = ARNETWORKAL_BLENetwork_PopFrame;
         manager->send = ARNETWORKAL_BLENetwork_Send;
         manager->receive = ARNETWORKAL_BLENetwork_Receive;
+        //manager->unlock = //TODO set
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
 
 #else
-    error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
+    error = ARNETWORKAL_ERROR_NETWORK_TYPE;
 #endif
 
     return error;
@@ -220,7 +222,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseBLENetwork (ARNETWORKAL_Manager_t *m
         error = ARNETWORKAL_BLENetwork_Delete(manager);
     }
 #else
-    error = ARNETWORKAL_ERROR_UNKNOWN_NETWORK;
+    error = ARNETWORKAL_ERROR_NETWORK_TYPE;
 #endif
 
     return error;

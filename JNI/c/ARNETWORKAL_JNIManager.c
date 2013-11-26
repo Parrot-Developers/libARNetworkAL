@@ -19,6 +19,10 @@
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
+#include "ARNETWORKAL_JNIManager.h"
+
+#include "ARNETWORKAL_JNIBLENetwork.h"
+
 /*****************************************
  *
  *             private header:
@@ -32,7 +36,6 @@
  *             implementation :
  *
  ******************************************/
-
 
 JavaVM *ARNETWORKAL_JNIManager_VM = NULL; /** reference to the java virtual machine */
 
@@ -50,6 +53,8 @@ JNI_OnLoad(JavaVM *VM, void *reserved)
 
     /** Saving the reference to the java virtual machine */
     ARNETWORKAL_JNIManager_VM = VM;
+    
+    ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_JNIMANAGER_TAG, "JNI_OnLoad ARNETWORKAL_JNIManager_VM: %d ", ARNETWORKAL_JNIManager_VM);
 
     /** Return the JNI version */
     return JNI_VERSION_1_6;
@@ -162,6 +167,81 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseWifiNetwork(JNIE
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
     error = ARNETWORKAL_Manager_CloseWifiNetwork(manager);
+
+    return error;
+}
+
+
+/**
+ * @brief initialize BLE network for sending and receiving the data.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManagerPtr address of the ARNETWORKAL_Manager_t
+ * @param[in] jdeviceManager BLE manager.
+ * @param[in] device BLE device.
+ * @param[in] recvTimeoutSec timeout in seconds set on the socket to limit the time of blocking of the function ARNETWORK_Receiver_Read().
+ * @return error equal to ARNETWORKAL_OK if the init was successful otherwise see eARNETWORKAL_ERROR.
+ **/
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jobject jdeviceManager, jobject jdevice, jint recvTimeoutSec)
+{
+    /* -- initialize BLE of sending and receiving the data. -- */
+
+    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, " nativeInitBLENetwork");
+    
+    /* local declarations */
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    /** -- Initialize the BLE Network -- */
+    /** check parameters*/
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+
+    if(error == ARNETWORKAL_OK)
+    {
+        error = ARNETWORKAL_JNIBLENetwork_New(manager);
+    }
+
+    if (error == ARNETWORKAL_OK)
+    {
+        error = ARNETWORKAL_JNIBLENetwork_Connect(manager, (ARNETWORKAL_BLEDeviceManager_t) jdeviceManager, (ARNETWORKAL_BLEDevice_t) jdevice, recvTimeoutSec);
+    }
+
+    if(error == ARNETWORKAL_OK)
+    {
+        manager->pushFrame = ARNETWORKAL_JNIBLENetwork_PushFrame;
+        manager->popFrame = ARNETWORKAL_JNIBLENetwork_PopFrame;
+        manager->send = ARNETWORKAL_JNIBLENetwork_Send;
+        manager->receive = ARNETWORKAL_JNIBLENetwork_Receive;
+        manager->unlock = ARNETWORKAL_JNIBLENetwork_Unlock;
+        manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
+    }
+    
+    return error;
+}
+
+/**
+ * @brief Closes BLE network for sending and receiving the data.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManagerPtr address of the ARNETWORKAL_Manager_t
+ * @return error equal to ARNETWORKAL_OK if the close was successful otherwise see eARNETWORKAL_ERROR.
+ **/
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseBLENetwork(JNIEnv *env, jobject obj, jlong jManagerPtr)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, " nativeCloseBLENetwork");
+    
+    if(manager)
+    {
+        error = ARNETWORKAL_JNIBLENetwork_Delete(manager);
+    }
 
     return error;
 }
