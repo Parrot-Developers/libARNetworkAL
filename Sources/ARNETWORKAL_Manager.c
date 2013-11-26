@@ -126,6 +126,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->popFrame = ARNETWORKAL_WifiNetwork_PopFrame;
         manager->send = ARNETWORKAL_WifiNetwork_Send;
         manager->receive = ARNETWORKAL_WifiNetwork_Receive;
+        manager->unlock = ARNETWORKAL_WifiNetwork_Signal;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
     }
 
