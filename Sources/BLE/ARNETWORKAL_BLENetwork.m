@@ -135,23 +135,20 @@
         _recvService = receiverService;
 
         // Registered notification service for receiver.
-        for(CBCharacteristic *characteristic in [receiverService characteristics])
+        /*for(CBCharacteristic *characteristic in [receiverService characteristics])
         {
             if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
             {
                 [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:characteristic];
             }
-        }
-
-        // Registered notification service for acknowledge sender.
-        for(CBCharacteristic *characteristic in [senderService characteristics])
-        {
-            if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
-            {
-                [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:characteristic];
-            }
-        }
-
+        }*/
+        
+        //temporary just Registered notification for the 4 characteristics need by the DELOS
+        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 14]];
+        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 15]];
+        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 27]];
+        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 28]];
+        //temporary just Registered notification for the 4 characteristics need by the DELOS
     }
 
     return result;
@@ -193,14 +190,8 @@
 
         /** Get the good characteristic */
         CBCharacteristic *characteristicToSend = nil;
-        if(frame->type == ARNETWORKAL_FRAME_TYPE_ACK)
-        {
-            characteristicToSend = [[_recvService characteristics] objectAtIndex:frame->id];
-        }
-        else
-        {
-            characteristicToSend = [[_sendService characteristics] objectAtIndex:frame->id];
-        }
+
+        characteristicToSend = [[_sendService characteristics] objectAtIndex:frame->id];
 
         if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
         {
