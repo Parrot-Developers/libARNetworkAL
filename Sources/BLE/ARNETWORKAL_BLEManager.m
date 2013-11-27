@@ -310,4 +310,24 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #endif
 }
 
+- (void)unlock
+{
+    /* post all Semaphore to unlock the all the functions */
+#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+    NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__, peripheral);
+#endif
+    
+    //ARSAL_Sem_Post(&connectionSem);
+    //ARSAL_Sem_Post(&discoverServicesSem);
+    //ARSAL_Sem_Post(&discoverCharacteristicsSem);
+    ARSAL_Sem_Post(&readCharacteristicsSem);
+    //ARSAL_Sem_Post(&configurationSem);
+    
+    /* disconnectSem is not post because:
+     * if the connection is fail, disconnect is not call.
+     * if the connection is successful, the BLE callback is always called.
+     * the disconnect function is called after the join of the network threads.
+     */
+}
+
 @end

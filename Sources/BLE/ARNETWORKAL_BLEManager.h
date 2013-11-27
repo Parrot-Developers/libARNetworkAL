@@ -46,6 +46,7 @@ DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 - (BOOL)setNotificationCharacteristic:(CBCharacteristic *)characteristic;
 - (BOOL)writeData:(NSData *)data toCharacteristic:(CBCharacteristic *)characteristic;
 - (BOOL)readData:(NSMutableArray *)mutableArray;
+- (void)unlock;
 
 @end
 

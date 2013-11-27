@@ -59,6 +59,14 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Send(ARNETWORKAL_Manager_t *m
 eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Receive(ARNETWORKAL_Manager_t *manager);
 
 /**
+ * @brief Callback defines to unlock all functions locked.
+ * this function is call by ARNetwork to permit to join its threads.
+ * @param manager The manager which should read from the network
+ * @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
+ **/
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager);
+
+/**
  * @brief Connect to a BLE device.
  * @param[in] manager address of the pointer on the Manager
  * @param[in] device address of device manager at which the data will be sent and received.

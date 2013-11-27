@@ -200,7 +200,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->popFrame = ARNETWORKAL_BLENetwork_PopFrame;
         manager->send = ARNETWORKAL_BLENetwork_Send;
         manager->receive = ARNETWORKAL_BLENetwork_Receive;
-        //manager->unlock = //TODO set
+        manager->unlock = ARNETWORKAL_BLENetwork_Unlock;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
 

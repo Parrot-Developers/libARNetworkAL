@@ -366,6 +366,17 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Receive(ARNETWORKAL_Manager_t
     return [network receive];
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
+{
+    /* -- BLE unlock all functions locked -- */
+    
+    ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->receiverObject;
+    
+    [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) unlock];
+    
+    return ARNETWORKAL_OK;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
 {
     ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
