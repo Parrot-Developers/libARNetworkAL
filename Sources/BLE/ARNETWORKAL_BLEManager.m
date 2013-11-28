@@ -317,17 +317,55 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__, peripheral);
 #endif
     
-    //ARSAL_Sem_Post(&connectionSem);
-    //ARSAL_Sem_Post(&discoverServicesSem);
-    //ARSAL_Sem_Post(&discoverCharacteristicsSem);
+    ARSAL_Sem_Post(&connectionSem);
+    ARSAL_Sem_Post(&discoverServicesSem);
+    ARSAL_Sem_Post(&discoverCharacteristicsSem);
     ARSAL_Sem_Post(&readCharacteristicsSem);
-    //ARSAL_Sem_Post(&configurationSem);
+    ARSAL_Sem_Post(&configurationSem);
     
-    /* disconnectSem is not post because:
+    /* disconnectionSem is not post because:
      * if the connection is fail, disconnect is not call.
      * if the connection is successful, the BLE callback is always called.
      * the disconnect function is called after the join of the network threads.
      */
+}
+
+- (void)reset
+{
+    /* reset all Semaphores */
+#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+    NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__, peripheral);
+#endif
+    
+    while (ARSAL_Sem_Trywait(&connectionSem) > 0)
+    {
+        /* Do nothing*/
+    }
+    
+    while (ARSAL_Sem_Trywait(&discoverServicesSem) > 0)
+    {
+        /* Do nothing*/
+    }
+    
+    while (ARSAL_Sem_Trywait(&discoverCharacteristicsSem) > 0)
+    {
+        /* Do nothing*/
+    }
+    
+    while (ARSAL_Sem_Trywait(&disconnectionSem) > 0)
+    {
+        /* Do nothing*/
+    }
+    
+    while (ARSAL_Sem_Trywait(&configurationSem) > 0)
+    {
+        /* Do nothing*/
+    }
+    
+    while (ARSAL_Sem_Trywait(&readCharacteristicsSem) > 0)
+    {
+        /* Do nothing*/
+    }
 }
 
 @end

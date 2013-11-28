@@ -339,6 +339,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
         CFRelease(manager->receiverObject);
         manager->senderObject = NULL;
         manager->receiverObject = NULL;
+        
+        /* reset the BLEManager for a new use */
+        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) reset];
     }
     return error;
 }
