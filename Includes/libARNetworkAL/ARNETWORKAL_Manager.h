@@ -16,13 +16,13 @@
 #define ARNETWORKAL_MANAGER_BLE_ID_MAX  (ARNETWORKAL_MANAGER_DEFAULT_ID_MAX / 4) /**< ID Max for BLENetwork */
 
 /**
- * @brief Network abstraction structure.
+ * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
  * @see ARNETWORKAL_Manager_PushNextFrame_t
  * @see ARNETWORKAL_Manager_PopNextFrame_t
  * @see ARNETWORKAL_Manager_Sending_t
  * @see ARNETWORKAL_Manager_Receiving_t
  */
-typedef struct ARNETWORKAL_Manager_s ARNETWORKAL_Manager_t;
+typedef struct ARNETWORKAL_Manager_t ARNETWORKAL_Manager_t;
 
 /**
  * @brief BLE Manager (used to send/read data)
@@ -96,11 +96,14 @@ typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_Receive_t) (ARNETWORKA
  */
 typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_PopFrame_t) (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame);
 
-
 /**
- * @brief ARNETWORKAL_Manager_t internal representation
+ * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
+ * @see ARNETWORKAL_Manager_PushNextFrame_t
+ * @see ARNETWORKAL_Manager_PopNextFrame_t
+ * @see ARNETWORKAL_Manager_Sending_t
+ * @see ARNETWORKAL_Manager_Receiving_t
  */
-struct ARNETWORKAL_Manager_s
+struct ARNETWORKAL_Manager_t
 {
     ARNETWORKAL_Manager_PushFrame_t pushFrame; /**< Manager specific PushFrame function */
     ARNETWORKAL_Manager_PopFrame_t popFrame; /**< Manager specific PopFrame function */
