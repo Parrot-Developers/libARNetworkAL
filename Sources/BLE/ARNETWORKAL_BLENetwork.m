@@ -135,20 +135,13 @@
         _recvService = receiverService;
 
         // Registered notification service for receiver.
-        /*for(CBCharacteristic *characteristic in [receiverService characteristics])
+        for(CBCharacteristic *characteristic in [receiverService characteristics])
         {
             if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
             {
                 [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:characteristic];
             }
-        }*/
-        
-        //temporary just Registered notification for the 4 characteristics need by the DELOS
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 14]];
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 15]];
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 27]];
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:[[receiverService characteristics] objectAtIndex: 28]];
-        //temporary just Registered notification for the 4 characteristics need by the DELOS
+        }
     }
 
     return result;
