@@ -180,10 +180,11 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseWifiNetwork(JNIE
  * @param[in] jdeviceManager BLE manager.
  * @param[in] device BLE device.
  * @param[in] recvTimeoutSec timeout in seconds set on the socket to limit the time of blocking of the function ARNETWORK_Receiver_Read().
+ * @param[in] notificationIDArray list of the buffer ID to notify
  * @return error equal to ARNETWORKAL_OK if the init was successful otherwise see eARNETWORKAL_ERROR.
  **/
 JNIEXPORT jint JNICALL
-Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jobject jdeviceManager, jobject jdevice, jint recvTimeoutSec)
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jintArray jdeviceManager, jobject jdevice, jint recvTimeoutSec, jintArray notificationIDArray)
 {
     /* -- initialize BLE of sending and receiving the data. -- */
 
@@ -202,12 +203,12 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv
 
     if(error == ARNETWORKAL_OK)
     {
-        error = ARNETWORKAL_JNIBLENetwork_New(manager);
+        error = ARNETWORKAL_JNIBLENetwork_New (manager);
     }
 
     if (error == ARNETWORKAL_OK)
     {
-        error = ARNETWORKAL_JNIBLENetwork_Connect(manager, (ARNETWORKAL_BLEDeviceManager_t) jdeviceManager, (ARNETWORKAL_BLEDevice_t) jdevice, recvTimeoutSec);
+        error = ARNETWORKAL_JNIBLENetwork_Connect(manager, (ARNETWORKAL_BLEDeviceManager_t) jdeviceManager, (ARNETWORKAL_BLEDevice_t) jdevice, recvTimeoutSec, notificationIDArray);
     }
 
     if(error == ARNETWORKAL_OK)

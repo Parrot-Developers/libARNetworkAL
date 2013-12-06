@@ -37,7 +37,7 @@ public class ARNetworkALBLENetwork
         nativeJNIInit();
     }
     
-    public ARNetworkALBLENetwork()
+    public ARNetworkALBLENetwork ()
     {
         //Log.d(TAG, "new ARNetworkALBLENetwork ");
         
@@ -45,7 +45,7 @@ public class ARNetworkALBLENetwork
         this.array = new ArrayList<BluetoothGattCharacteristic>();
     }
     
-    public int connect (ARNetworkALBLEManager bleManager, BluetoothDevice deviceBLEService)
+    public int connect (ARNetworkALBLEManager bleManager, BluetoothDevice deviceBLEService, int[] notificationIDArray)
     {
         Log.d(TAG, "connect");
         
@@ -111,25 +111,43 @@ public class ARNetworkALBLENetwork
             this.recvService = receiverService;
             this.sendService = senderService;
             
-            /* Registered notification service for receiver */
-            /*
-            for (BluetoothGattCharacteristic gattCharacteristic : receiverService.getCharacteristics())
+            /* notify the characteristics */
+            /* if some characteristics are specified to be notified */
+            if (notificationIDArray != null)
             {
-                if ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                /* notify only the characteristics specified */
+                boolean notificationSuccesful = true;
+                for (int id : notificationIDArray)
                 {
-                    bleManager.setCharacteristicNotification (receiverService, gattCharacteristic);
+                    if (notificationSuccesful == true)
+                    {
+                        /* if the characteristic can be notified */
+                        if ((receiverService.getCharacteristics().get(id).getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                        {
+                            notificationSuccesful = bleManager.setCharacteristicNotification (this.recvService, receiverService.getCharacteristics().get(id));
+                        }
+                    }
+                }
+                
+                if (notificationSuccesful == false)
+                {
+                    /* disconnecting in error case */
+                    disconnect();
                 }
             }
-            */
-            
-            //TODO: sup
-            //temporary just Registered notification service for the 4 Characteristics need by the DELOS
-            bleManager.setCharacteristicNotification (this.recvService, receiverService.getCharacteristics().get(14));
-            bleManager.setCharacteristicNotification (this.recvService, receiverService.getCharacteristics().get(15));
-            bleManager.setCharacteristicNotification (this.recvService, receiverService.getCharacteristics().get(27));
-            bleManager.setCharacteristicNotification (this.recvService, receiverService.getCharacteristics().get(28));
-            //temporary just Registered notification service for the 4 Characteristics need by the DELOS
-            //TODO: sup
+            else
+            {
+                /* Registered notification service for receiver */
+                
+                for (BluetoothGattCharacteristic gattCharacteristic : receiverService.getCharacteristics())
+                {
+                    /* if the characteristic can be notified */
+                    if ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                    {
+                        bleManager.setCharacteristicNotification (receiverService, gattCharacteristic);
+                    }
+                }
+            }
             
         }
         

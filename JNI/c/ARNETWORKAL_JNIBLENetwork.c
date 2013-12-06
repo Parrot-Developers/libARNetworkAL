@@ -230,7 +230,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIInit(JNIEnv *en
     
     jclass jBLENetworkCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork");
     
-    ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Lcom/parrot/arsdk/arnetworkal/ARNetworkALBLEManager;Landroid/bluetooth/BluetoothDevice;)I");
+    ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Lcom/parrot/arsdk/arnetworkal/ARNetworkALBLEManager;Landroid/bluetooth/BluetoothDevice;[I)I");
     ARNETWORKAL_JNIBLENETWORK_METHOD_DISCONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "disconnect", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME = (*env)->GetMethodID(env, jBLENetworkCls, "pushFrame", "(IIII[B)I");
     ARNETWORKAL_JNIBLENETWORK_METHOD_POP_FRAME = (*env)->GetMethodID(env, jBLENetworkCls, "popFrame", "()Lcom/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork$DataPop;");
@@ -641,7 +641,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Unlock(ARNETWORKAL_Manager_t *manag
     return error;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, jintArray notificationIDArray)
 {
     /* -- connect the BLE network -- */
     
@@ -673,7 +673,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *man
     if (env != NULL)
     {
         /* java BLE connect */
-        result = (*env)->CallIntMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT, centralManager, peripheral);
+        result = (*env)->CallIntMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT, centralManager, peripheral, notificationIDArray);
     }
     else
     {
