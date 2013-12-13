@@ -5,7 +5,7 @@ ifneq ("$(TARGET_LIBC)","bionic")
 
 include $(CLEAR_VARS)
 
-LOCAL_CATEGORY_PATH := mykonos3/libs
+LOCAL_CATEGORY_PATH := dragon/libs
 LOCAL_MODULE := libARNetworkAL
 LOCAL_DESCRIPTION := ARSDK Network Control Library for Specific OS
 
