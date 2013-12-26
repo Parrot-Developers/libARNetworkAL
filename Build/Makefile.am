@@ -6,7 +6,8 @@ ACLOCAL_AMFLAGS                                     =   -I m4
 # The list of header files that belong to the library (to be installed later)
 HEADER_FILES                                        =   ../Includes/libARNetworkAL/ARNETWORKAL_Manager.h    \
                                                         ../Includes/libARNetworkAL/ARNETWORKAL_Frame.h      \
-                                                        ../Includes/libARNetworkAL/ARNETWORKAL_Error.h
+                                                        ../Includes/libARNetworkAL/ARNETWORKAL_Error.h      \
+                                                        ../Includes/libARNetworkAL/ARNetworkAL.h
 
 # The sources to add to the library and to add to the source distribution
 SOURCE_FILES                                        =   $(HEADER_FILES)                                     \
