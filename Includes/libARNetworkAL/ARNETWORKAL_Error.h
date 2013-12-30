@@ -20,6 +20,7 @@ typedef enum
     ARNETWORKAL_ERROR_FIFO_INIT,                     /**< Fifo creation error (details set in errno) */
 
     ARNETWORKAL_ERROR_MANAGER = -2000,               /**< Manager generic error */
+    ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED, /**< The current manager does not support this operation */
 
     ARNETWORKAL_ERROR_NETWORK = -3000,               /**< Network generic error */
     ARNETWORKAL_ERROR_NETWORK_TYPE,                  /**< Network type, not available for the platform error */

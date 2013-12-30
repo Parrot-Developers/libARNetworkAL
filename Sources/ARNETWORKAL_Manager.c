@@ -67,6 +67,8 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
         manager->send = (ARNETWORKAL_Manager_Send_t)NULL;
         manager->receive = (ARNETWORKAL_Manager_Receive_t)NULL;
         manager->unlock = (ARNETWORKAL_Manager_Unlock_t)NULL;
+        manager->getBandwidth = (ARNETWORKAL_Manager_GetBandwidth_t)NULL;
+        manager->bandwidthThread = (ARNETWORKAL_Manager_BandwidthThread_t)NULL;
         manager->receiverObject = (void *)NULL;
         manager->senderObject = (void *)NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
@@ -127,25 +129,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->send = ARNETWORKAL_WifiNetwork_Send;
         manager->receive = ARNETWORKAL_WifiNetwork_Receive;
         manager->unlock = ARNETWORKAL_WifiNetwork_Signal;
+        manager->getBandwidth = ARNETWORKAL_WifiNetwork_GetBandwidth;
+        manager->bandwidthThread = ARNETWORKAL_WifiNetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
-    }
-
-    return error;
-}
-
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_SignalWifiNetwork(ARNETWORKAL_Manager_t *manager)
-{
-    /** -- Signals the Wifi Network to stop blocking on sockets -- */
-    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-
-    if(manager == NULL)
-    {
-        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
-    }
-
-    if(error == ARNETWORKAL_OK)
-    {
-        error = ARNETWORKAL_WifiNetwork_Signal(manager);
     }
 
     return error;
@@ -201,6 +187,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->send = ARNETWORKAL_BLENetwork_Send;
         manager->receive = ARNETWORKAL_BLENetwork_Receive;
         manager->unlock = ARNETWORKAL_BLENetwork_Unlock;
+        // TODO: Add getBandwidth to BLE Networks
+        //manager->getBandwidth = ARNETWORKAL_BLENetwork_GetBandwidth;
+        //manager->bandwidthThread = ARNETWORKAL_BLENetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
 
@@ -248,4 +237,54 @@ void ARNETWORKAL_Manager_Delete (ARNETWORKAL_Manager_t **manager)
 
         *manager = NULL;
     }
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_Unlock (ARNETWORKAL_Manager_t *manager)
+{
+    eARNETWORKAL_ERROR err = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        err = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->unlock == NULL)
+    {
+        err = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        err = manager->unlock(manager);
+    }
+    return err;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetBandwidth (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw)
+{
+    eARNETWORKAL_ERROR err = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        err = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->getBandwidth == NULL)
+    {
+        err = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        err = manager->getBandwidth (manager, uploadBw, downloadBw);
+    }
+    return err;
+}
+
+void* ARNETWORKAL_Manager_BandwidthThread (void *manager)
+{
+    if (manager == NULL)
+    {
+        return (void *)0;
+    }
+    ARNETWORKAL_Manager_t *trueManager = (ARNETWORKAL_Manager_t *)manager;
+    if (trueManager->bandwidthThread == NULL)
+    {
+        return (void *)0;
+    }
+    return trueManager->bandwidthThread (manager);
 }

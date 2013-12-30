@@ -85,16 +85,8 @@ typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_Send_t) (ARNETWORKAL_M
 typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_Receive_t) (ARNETWORKAL_Manager_t *manager);
 
 /**
- * @brief unlock all functions locked.
- * this function is call by ARNetwork to permit to join its threads.
- * @param manager The manager which should read from the network
- * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
- */
-typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_Unlock_t) (ARNETWORKAL_Manager_t *manager);
-
-/**
  * @brief Fetches data from the last received network frame
- * This function will try to read an @ref ARNETWORKAL_Frame_t from the last
+ * This function will try to read an ::ARNETWORKAL_Frame_t from the last
  * received network frame. Depending on the implementation, this function may
  * directly read from the network instead of an internal buffer.
  * @param manager The manager which should fetch the data
@@ -102,6 +94,32 @@ typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_Unlock_t) (ARNETWORKAL_Manager_
  * @return A callback return code
  */
 typedef eARNETWORKAL_MANAGER_RETURN (*ARNETWORKAL_Manager_PopFrame_t) (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame);
+
+/**
+ * @brief unlock all functions locked.
+ * this function is call by ARNetwork to permit to join its threads.
+ * @param manager The manager which should unlock all its locking functions.
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_Unlock_t) (ARNETWORKAL_Manager_t *manager);
+
+/**
+ * @brief gets the network bandwidth.
+ * @param manager The manager.
+ * @param[out] pointer which will hold the upload bandwidth, in bytes per second (optionnal, can be NULL)
+ * @param[out] pointer which will hold the download bandwidth, in bytes per second (optionnal, can be NULL)
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_GetBandwidth_t) (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw);
+
+/**
+ * @brief Entry point for the network bandwidth measurement thread.
+ * This thread needs to be started for the ::ARNETWORKAL_Manager_GetBandwidth_t to get any useful information.
+ * @note This thread will be stopped by the ARNETWORKAL_CloseXXXX() function.
+ * @param manager The manager, casted as a void *
+ * @return always returns (void *)0
+ */
+typedef void* (*ARNETWORKAL_Manager_BandwidthThread_t) (void *manager);
 
 /**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
@@ -117,6 +135,8 @@ struct ARNETWORKAL_Manager_t
     ARNETWORKAL_Manager_Send_t send; /**< Manager specific send function */
     ARNETWORKAL_Manager_Receive_t receive; /**< Manager specific receive function */
     ARNETWORKAL_Manager_Unlock_t unlock; /**< Manager specific unlock function */
+    ARNETWORKAL_Manager_GetBandwidth_t getBandwidth; /**< Manager specific getBandwidth function */
+    ARNETWORKAL_Manager_BandwidthThread_t bandwidthThread; /**< Manager specific bandwidth thread EP */
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
@@ -141,6 +161,35 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New(eARNETWORKAL_ERROR *error);
 void ARNETWORKAL_Manager_Delete(ARNETWORKAL_Manager_t **manager);
 
 /**
+ * @brief gets the network bandwidth.
+ * @param manager The manager.
+ * @param[out] pointer which will hold the upload bandwidth, in bytes per second (optionnal, can be NULL)
+ * @param[out] pointer which will hold the download bandwidth, in bytes per second (optionnal, can be NULL)
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetBandwidth (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw);
+
+/**
+ * @brief Entry point for the bandwidth thread of the manager.
+ * This threads needs to be starter in order to get meaningful informations
+ * with ARNETWORKAL_Manager_GetBandwidth().
+ * @note The thread will be stopped by the ARNETWORKAL_Manager_CloseXxxx() call.
+ * @warning Only call this function once on a manager.
+ * @param manager The manager, casted as a void *.
+ * @return Always returns (void *)0.
+ */
+void* ARNETWORKAL_Manager_BandwidthThread (void *manager);
+
+/**
+ * @brief unlock all functions locked.
+ * this function is call by ARNetwork to permit to join its threads.
+ * @param manager The manager which should unlock all its locking functions.
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_Unlock (ARNETWORKAL_Manager_t *manager);
+
+
+/**
  * @brief initialize Wifi network.
  * @param manager pointer on the Manager
  * @param[in] addr IP address of connection at which the data will be sent.
@@ -150,16 +199,6 @@ void ARNETWORKAL_Manager_Delete(ARNETWORKAL_Manager_t **manager);
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork(ARNETWORKAL_Manager_t *manager, const char *addr, int sendingPort, int receivingPort, int recvTimeoutSec);
-
-/**
- * @brief force timeout on Wifi network
- * When this function is called, all the functions that are blocked on sockets are immediately unblocked.
- * A typical use case is when the ARNETWORK library is closing: The threads must be joined before calling
- * @ref ARNETWORKAL_Manager_CloseWifiNetwork, but the threads might be waiting for an ARNETWORKAL timeout.
- * @param manager pointer on the Manager
- * @return Any possible error code (see @ref eARNETWORKAL_ERROR)
- */
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_SignalWifiNetwork(ARNETWORKAL_Manager_t *manager);
 
 /**
  * @brief close Wifi network.

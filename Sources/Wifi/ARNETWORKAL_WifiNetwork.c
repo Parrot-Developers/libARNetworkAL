@@ -20,9 +20,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 
-#include <libARSAL/ARSAL_Socket.h>
-#include <libARSAL/ARSAL_Print.h>
-#include <libARSAL/ARSAL_Endianness.h>
+#include <libARSAL/ARSAL.h>
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
@@ -39,11 +37,15 @@
 #define ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE     1500
 #define ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE   1500
 
+#define ARNETWORKAL_BW_PROGRESS_EACH_SEC 1
+#define ARNETWORKAL_BW_NB_ELEMS 10
+
 /*****************************************
  *
  *             private header:
  *
  *****************************************/
+
 typedef struct _ARNETWORKAL_WifiNetworkObject_
 {
     int socket;
@@ -52,6 +54,12 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
     uint8_t *currentFrame;
     uint32_t size;
     uint32_t timeoutSec;
+    /* Bandwidth measure */
+    ARSAL_Sem_t bw_sem;
+    ARSAL_Sem_t bw_threadRunning;
+    int bw_index;
+    uint32_t bw_elements[ARNETWORKAL_BW_NB_ELEMS];
+    uint32_t bw_current;
 } ARNETWORKAL_WifiNetworkObject;
 
 /*****************************************
@@ -75,9 +83,19 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         manager->senderObject = malloc(sizeof(ARNETWORKAL_WifiNetworkObject));
         if(manager->senderObject != NULL)
         {
-            ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket = -1;
-            ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[0] = -1;
-            ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[1] = -1;
+            ARNETWORKAL_WifiNetworkObject *wifiObj = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+            wifiObj->socket = -1;
+            wifiObj->fifo[0] = -1;
+            wifiObj->fifo[1] = -1;
+            wifiObj->bw_index = 0;
+            wifiObj->bw_current = 0;
+            int i;
+            for (i = 0; i < ARNETWORKAL_BW_NB_ELEMS; i++)
+            {
+                wifiObj->bw_elements[i] = 0;
+            }
+            ARSAL_Sem_Init (&wifiObj->bw_sem, 0, 0);
+            ARSAL_Sem_Init (&wifiObj->bw_threadRunning, 0, 1);
         }
         else
         {
@@ -106,9 +124,19 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         manager->receiverObject = malloc(sizeof(ARNETWORKAL_WifiNetworkObject));
         if(manager->receiverObject != NULL)
         {
-            ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket = -1;
-            ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[0] = -1;
-            ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[1] = -1;
+            ARNETWORKAL_WifiNetworkObject *wifiObj = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+            wifiObj->socket = -1;
+            wifiObj->fifo[0] = -1;
+            wifiObj->fifo[1] = -1;
+            wifiObj->bw_index = 0;
+            wifiObj->bw_current = 0;
+            int i;
+            for (i = 0; i < ARNETWORKAL_BW_NB_ELEMS; i++)
+            {
+                wifiObj->bw_elements[i] = 0;
+            }
+            ARSAL_Sem_Init (&wifiObj->bw_sem, 0, 0);
+            ARSAL_Sem_Init (&wifiObj->bw_threadRunning, 0, 1);
         }
         else
         {
@@ -164,6 +192,90 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Signal(ARNETWORKAL_Manager_t *manager
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetBandwidth (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw)
+{
+    eARNETWORKAL_ERROR err = ARNETWORKAL_OK;
+    if (manager == NULL ||
+        manager->senderObject == NULL ||
+        manager->receiverObject == NULL)
+    {
+        err = ARNETWORKAL_ERROR_BAD_PARAMETER;
+        return err;
+    }
+
+    ARNETWORKAL_WifiNetworkObject *sender = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    ARNETWORKAL_WifiNetworkObject *reader = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+
+    if (uploadBw != NULL)
+    {
+        uint32_t up = 0;
+        int i;
+        for (i = 0; i < ARNETWORKAL_BW_NB_ELEMS; i++)
+        {
+            up += sender->bw_elements[i];
+        }
+        up /= (ARNETWORKAL_BW_NB_ELEMS * ARNETWORKAL_BW_PROGRESS_EACH_SEC);
+        *uploadBw = up;
+    }
+    if (downloadBw != NULL)
+    {
+        uint32_t down = 0;
+        int i;
+        for (i = 0; i < ARNETWORKAL_BW_NB_ELEMS; i++)
+        {
+            down += reader->bw_elements[i];
+        }
+        down /= (ARNETWORKAL_BW_NB_ELEMS * ARNETWORKAL_BW_PROGRESS_EACH_SEC);
+        *downloadBw = down;
+    }
+    return err;
+}
+
+void *ARNETWORKAL_WifiNetwork_BandwidthThread (void *param)
+{
+    if (param == NULL)
+    {
+        return (void *)0;
+    }
+
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *)param;
+    ARNETWORKAL_WifiNetworkObject *sender = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    ARNETWORKAL_WifiNetworkObject *reader = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+
+    ARSAL_Sem_Wait (&sender->bw_threadRunning);
+    ARSAL_Sem_Wait (&reader->bw_threadRunning);
+
+    const struct timespec timeout = {
+        .tv_sec = ARNETWORKAL_BW_PROGRESS_EACH_SEC,
+        .tv_nsec = 0,
+    };
+    // We read only on sender sem as both will be set when closing
+    int waitRes = ARSAL_Sem_Timedwait (&sender->bw_sem, &timeout);
+    int loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+    while (loopCondition)
+    {
+        sender->bw_index++;
+        sender->bw_index %= ARNETWORKAL_BW_NB_ELEMS;
+        sender->bw_elements[sender->bw_index] = sender->bw_current;
+        sender->bw_current = 0;
+
+        reader->bw_index++;
+        reader->bw_index %= ARNETWORKAL_BW_NB_ELEMS;
+        reader->bw_elements[reader->bw_index] = reader->bw_current;
+        reader->bw_current = 0;
+
+        // Update loop condition
+        waitRes = ARSAL_Sem_Timedwait (&sender->bw_sem, &timeout);
+        loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+    }
+
+
+    ARSAL_Sem_Post (reader->bw_threadRunning);
+    ARSAL_Sem_Post (sender->bw_threadRunning);
+
+    return (void *)0;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
@@ -177,16 +289,22 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
     {
         if (manager->senderObject)
         {
-            ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket);
+            ARNETWORKAL_WifiNetworkObject *sender = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+            ARSAL_Socket_Close(sender->socket);
 
-            close (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[0]);
-            close (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo[1]);
+            close (sender->fifo[0]);
+            close (sender->fifo[1]);
 
-            if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer)
+            if(sender->buffer)
             {
-                free (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer);
-                ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer = NULL;
+                free (sender->buffer);
+                sender->buffer = NULL;
             }
+
+            ARSAL_Sem_Post (&sender->bw_sem);
+            ARSAL_Sem_Wait (&sender->bw_threadRunning);
+            ARSAL_Sem_Destroy (&sender->bw_sem);
+            ARSAL_Sem_Destroy (&sender->bw_threadRunning);
 
             free (manager->senderObject);
             manager->senderObject = NULL;
@@ -194,16 +312,22 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
 
         if(manager->receiverObject)
         {
-            ARSAL_Socket_Close(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket);
+            ARNETWORKAL_WifiNetworkObject *reader = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+            ARSAL_Socket_Close(reader->socket);
 
-            close (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[0]);
-            close (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo[1]);
+            close (reader->fifo[0]);
+            close (reader->fifo[1]);
 
-            if(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer)
+            if(reader->buffer)
             {
-                free (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer);
-                ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer = NULL;
+                free (reader->buffer);
+                reader->buffer = NULL;
             }
+
+            ARSAL_Sem_Post (&reader->bw_sem);
+            ARSAL_Sem_Wait (&reader->bw_threadRunning);
+            ARSAL_Sem_Destroy (&reader->bw_sem);
+            ARSAL_Sem_Destroy (&reader->bw_threadRunning);
 
             free (manager->receiverObject);
             manager->receiverObject = NULL;
@@ -453,9 +577,10 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
 
     if(senderObject->size != 0)
     {
-        ARSAL_Socket_Send(senderObject->socket, senderObject->buffer, senderObject->size, 0);
+        ssize_t bytes = ARSAL_Socket_Send(senderObject->socket, senderObject->buffer, senderObject->size, 0);
         senderObject->size = 0;
         senderObject->currentFrame = senderObject->buffer;
+        senderObject->bw_current += bytes;
     }
 
     return result;
@@ -498,6 +623,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             {
                 // Save the number of bytes read
                 receiverObject->size = size;
+                receiverObject->bw_current += size;
             }
             else if (size == 0)
             {
