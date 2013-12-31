@@ -21,6 +21,9 @@
 #define ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE      20
 #define ARNETWORKAL_BLENETWORK_RECEIVING_BUFFER_SIZE    1500
 
+#define ARNETWORKAL_BW_PROGRESS_EACH_SEC 1
+#define ARNETWORKAL_BW_NB_ELEMS 10
+
 #define ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID @"f"
 
 /*****************************************
@@ -37,12 +40,23 @@
 @property (nonatomic, strong) NSMutableArray *array;
 @property (nonatomic) ARNETWORKAL_Manager_t *manager;
 
+@property (nonatomic) uint32_t *bw_elementsUp;
+@property (nonatomic) uint32_t *bw_elementsDown;
+@property (nonatomic) int bw_index;
+@property (nonatomic) uint32_t bw_currentUp;
+@property (nonatomic) uint32_t bw_currentDown;
+@property (nonatomic) ARSAL_Sem_t bw_sem;
+@property (nonatomic) ARSAL_Sem_t bw_threadRunning;
+
 - (id)initWithManager:(ARNETWORKAL_Manager_t *)manager;
 - (eARNETWORKAL_ERROR)connectWithBTManager:(CBCentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec;
 - (eARNETWORKAL_ERROR)disconnect;
 - (eARNETWORKAL_MANAGER_RETURN)pushFrame:(ARNETWORKAL_Frame_t *)frame;
 - (eARNETWORKAL_MANAGER_RETURN)popFrame:(ARNETWORKAL_Frame_t *)frame;
 - (eARNETWORKAL_MANAGER_RETURN)receive;
+
+- (eARNETWORKAL_ERROR)getUpload:(uint32_t *)upload andDownloadBandwidth:(uint32_t *)download;
+- (void)bw_thread;
 
 
 @end
@@ -61,8 +75,18 @@
     {
         _manager = manager;
         _array = [[NSMutableArray alloc] init];
+        _bw_elementsUp = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
+        _bw_elementsDown = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
+        ARSAL_Sem_Init (&_bw_threadRunning, 0, 0);
     }
     return self;
+}
+
+- (void)dealloc
+{
+    free (_bw_elementsUp);
+    free (_bw_elementsDown);
+    ARSAL_Sem_Destroy (&_bw_threadRunning);
 }
 
 - (eARNETWORKAL_ERROR)connectWithBTManager:(CBCentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec
@@ -86,6 +110,7 @@
 
     if(result == ARNETWORKAL_OK)
     {
+
         if([SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkServices:nil])
         {
             for(int i = 0 ; (i < [[peripheral services] count]) && ((senderService == nil) || (receiverService == nil)) ; i++)
@@ -129,6 +154,17 @@
         NSLog(@"Sender service : %@", [senderService.UUID representativeString]);
         NSLog(@"Receiver service : %@", [receiverService.UUID representativeString]);
 
+        _bw_index = 0;
+        _bw_currentUp = 0;
+        _bw_currentDown = 0;
+        for (int i = 0; i < ARNETWORKAL_BW_NB_ELEMS; i++)
+        {
+            _bw_elementsUp[i] = 0;
+            _bw_elementsDown[i] = 0;
+        }
+        ARSAL_Sem_Init (&_bw_sem, 0, 0);
+        ARSAL_Sem_Post (&_bw_threadRunning);
+
         _centralManager = centralManager;
         _peripheral = peripheral;
         _sendService = senderService;
@@ -150,6 +186,11 @@
 - (eARNETWORKAL_ERROR)disconnect
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    ARSAL_Sem_Post (&_bw_sem);
+    ARSAL_Sem_Wait (&_bw_threadRunning);
+    ARSAL_Sem_Destroy (&_bw_sem);
+
     if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager])
     {
         error = ARNETWORKAL_ERROR_BLE_DISCONNECTION;
@@ -189,6 +230,10 @@
         if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
+        }
+        else
+        {
+            _bw_currentUp += data.length;
         }
     }
 
@@ -247,6 +292,8 @@
 
             /** get data address */
             frame->dataPtr = currentFrame;
+
+            _bw_currentDown += [[characteristic value] length];
         }
     }
 
@@ -278,6 +325,58 @@
     }
 
     return result;
+}
+
+- (eARNETWORKAL_ERROR)getUpload:(uint32_t *)upload andDownloadBandwidth:(uint32_t *)download
+{
+    int i;
+
+    uint32_t up = 0, down = 0;
+    for (i = 0; i < ARNETWORKAL_BW_NB_ELEMS; i++)
+    {
+        up += _bw_elementsUp[i];
+        down += _bw_elementsDown[i];
+    }
+    up /= (ARNETWORKAL_BW_NB_ELEMS * ARNETWORKAL_BW_PROGRESS_EACH_SEC);
+    down /= (ARNETWORKAL_BW_NB_ELEMS * ARNETWORKAL_BW_PROGRESS_EACH_SEC);
+    if (upload != NULL)
+    {
+        *upload = up;
+    }
+    if (download != NULL)
+    {
+        *download = down;
+    }
+    return ARNETWORKAL_OK;
+}
+
+- (void)bw_thread
+{
+    ARSAL_Sem_Wait (&_bw_threadRunning);
+
+    const struct timespec timeout = {
+        .tv_sec = ARNETWORKAL_BW_PROGRESS_EACH_SEC,
+        .tv_nsec = 0,
+    };
+
+    int waitRes = ARSAL_Sem_Timedwait (&_bw_sem, &timeout);
+    int loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+    while (loopCondition)
+    {
+        _bw_index++;
+        _bw_index %= ARNETWORKAL_BW_NB_ELEMS;
+        _bw_elementsUp[_bw_index] = _bw_currentUp;
+        _bw_elementsDown[_bw_index] = _bw_currentDown;
+        _bw_currentUp = 0;
+        _bw_currentDown = 0;
+
+        // Update loop condition
+        waitRes = ARSAL_Sem_Timedwait (&_bw_sem, &timeout);
+        loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+    }
+
+    ARSAL_Sem_Post (&_bw_threadRunning);
+    ARSAL_Sem_Post (&_bw_threadRunning);
 }
 
 
@@ -365,11 +464,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Receive(ARNETWORKAL_Manager_t
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
 {
     /* -- BLE unlock all functions locked -- */
-    
-    ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->receiverObject;
-    
     [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) unlock];
-    
     return ARNETWORKAL_OK;
 }
 
@@ -379,4 +474,26 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manage
     CBCentralManager *centralManager = (__bridge CBCentralManager *)deviceManager;
     CBPeripheral *peripheral = (__bridge CBPeripheral *)device;
     return [network connectWithBTManager:centralManager peripheral:peripheral andTimeout:recvTimeoutSec];
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_GetBandwidth (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw)
+{
+    if (manager == NULL)
+    {
+        return ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+
+    ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
+    return [network getUpload:uploadBw andDownloadBandwidth:downloadBw];
+}
+
+void *ARNETWORKAL_BLENetwork_BandwidthThread (void *param)
+{
+    if (param != NULL)
+    {
+        ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *)param;
+        ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
+        [network bw_thread];
+    }
+    return (void *)0;
 }

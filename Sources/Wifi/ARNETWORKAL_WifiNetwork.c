@@ -270,8 +270,8 @@ void *ARNETWORKAL_WifiNetwork_BandwidthThread (void *param)
     }
 
 
-    ARSAL_Sem_Post (reader->bw_threadRunning);
-    ARSAL_Sem_Post (sender->bw_threadRunning);
+    ARSAL_Sem_Post (&reader->bw_threadRunning);
+    ARSAL_Sem_Post (&sender->bw_threadRunning);
 
     return (void *)0;
 }

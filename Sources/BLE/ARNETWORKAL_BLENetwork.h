@@ -29,6 +29,22 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_New (ARNETWORKAL_Manager_t *manager);
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager);
 
 /**
+ * @brief Gets the bandwith of the network
+ * @param[in] manager pointer on the Manager
+ * @param[out] pointer which will hold the upload bandwidth, in bytes per second (optionnal, can be NULL)
+ * @param[out] pointer which will hold the download bandwidth, in bytes per second (optionnal, can be NULL)
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_GetBandwidth (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw);
+
+/**
+ * @brief Thread entry point for the bandwidth measurement.
+ * @param manager pointer on the Manager, casted as void *
+ * @return always returns (void *)0
+ */
+void *ARNETWORKAL_BLENetwork_BandwidthThread (void *param);
+
+/**
  * @brief Callback defines to push next frame to send to Network.
  * @param[in] manager address of the pointer on the Manager
  * @param[in] frame frame to push

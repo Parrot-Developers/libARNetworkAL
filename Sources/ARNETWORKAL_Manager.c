@@ -187,9 +187,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->send = ARNETWORKAL_BLENetwork_Send;
         manager->receive = ARNETWORKAL_BLENetwork_Receive;
         manager->unlock = ARNETWORKAL_BLENetwork_Unlock;
-        // TODO: Add getBandwidth to BLE Networks
-        //manager->getBandwidth = ARNETWORKAL_BLENetwork_GetBandwidth;
-        //manager->bandwidthThread = ARNETWORKAL_BLENetwork_BandwidthThread;
+        manager->getBandwidth = ARNETWORKAL_BLENetwork_GetBandwidth;
+        manager->bandwidthThread = ARNETWORKAL_BLENetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
     }
 
