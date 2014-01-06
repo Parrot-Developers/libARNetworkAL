@@ -15,7 +15,7 @@ public class ARNetworkALManager
     private native long nativeNew();
     private native int nativeDelete(long jManager);
     private native int nativeInitWifiNetwork(long jManager, String jaddr, int sendingPort, int receivingPort, int recvTimeoutSec);
-    private native int nativeSignalWifiNetwork(long jManager);
+    private native int nativeUnlock(long jManager);
     private native int nativeCloseWifiNetwork(long jManager);
     
     /* private native int nativeInitBLENetwork(long jManager, ARNetworkALBLEManager jdeviceManager, BluetoothDevice jdevice, int recvTimeoutSec); */
@@ -95,12 +95,12 @@ public class ARNetworkALManager
     }
 
     /**
-     * Signal the wifi network to unblock all waiting functions
+     * Unlock the manager
      */
-    public ARNETWORKAL_ERROR_ENUM signalWifiNetwork()
+    public ARNETWORKAL_ERROR_ENUM unlock()
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
-        int intError = nativeSignalWifiNetwork(m_managerPtr);
+        int intError = nativeUnlock(m_managerPtr);
         error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }

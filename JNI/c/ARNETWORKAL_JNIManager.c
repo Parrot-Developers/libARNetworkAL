@@ -134,22 +134,17 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitWifiNetwork(JNIEn
 }
 
 /**
- * @brief force timeout on Wifi network
- * When this function is called, all the functions that are blocked on sockets are immediately unblocked.
- * A typical use case is when the ARNETWORK library is closing: The threads must be joined before calling
- * @ref Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseWifiNetwork, but the threads might
- * be waiting for an ARNETWORKAL timeout.
+ * @brief unlocks all blocking functions.
  * @param env reference to the java environment
  * @param obj reference to the object calling this function
  * @param jManagerPtr address of the ARNETWORKAL_Manager_t
- * @param manager pointer on the Manager
  * @return error equal to ARNETWORKAL_OK if the signal was successful otherwise see eARNETWORKAL_ERROR.
  */
 JNIEXPORT jint JNICALL
-Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSignalWifiNetwork(JNIEnv *env, jobject obj, jlong jManagerPtr)
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeUnlock(JNIEnv *env, jobject obj, jlong jManagerPtr)
 {
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManagerPtr;
-    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SignalWifiNetwork (manager);
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_Unlock (manager);
     return error;
 }
 
