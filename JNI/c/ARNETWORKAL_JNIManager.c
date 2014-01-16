@@ -61,6 +61,36 @@ JNI_OnLoad(JavaVM *VM, void *reserved)
 }
 
 /**
+ * @brief get ARNETWORKAL_MANAGER_DEFAULT_ID_MAX
+ * @return value of ARNETWORKAL_MANAGER_DEFAULT_ID_MAX
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeGetDefineDefaultIdMAX (JNIEnv *env, jclass class)
+{
+    return ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
+}
+
+/**
+ * @brief get ARNETWORKAL_MANAGER_WIFI_ID_MAX
+ * @return value of ARNETWORKAL_MANAGER_WIFI_ID_MAX
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeGetDefineWifiIdMAX (JNIEnv *env, jclass class)
+{
+    return ARNETWORKAL_MANAGER_WIFI_ID_MAX;
+}
+
+/**
+ * @brief get ARNETWORKAL_MANAGER_BLE_ID_MAX
+ * @return value of ARNETWORKAL_MANAGER_BLE_ID_MAX
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeGetDefineBleIdMAX (JNIEnv *env, jclass class)
+{
+    return ARNETWORKAL_MANAGER_BLE_ID_MAX;
+}
+
+/**
  * @brief Create a new manager
  * @warning This function allocate memory
  * @param env reference to the java environment

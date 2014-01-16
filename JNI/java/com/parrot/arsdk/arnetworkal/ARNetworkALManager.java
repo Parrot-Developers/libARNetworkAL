@@ -11,6 +11,14 @@ import android.content.pm.PackageManager;
 public class ARNetworkALManager
 {
     private static final String TAG = "ARNetworkALManager";
+    
+    public static int ARNETWORKAL_MANAGER_DEFAULT_ID_MAX = 0;  /**< Default ID Max */
+    public static int ARNETWORKAL_MANAGER_WIFI_ID_MAX = 0;  /**< ID Max for WifiNetwork */
+    public static int ARNETWORKAL_MANAGER_BLE_ID_MAX = 0; /**< ID Max for BLENetwork */
+
+    private static native int nativeGetDefineDefaultIdMAX ();
+    private static native int nativeGetDefineWifiIdMAX ();
+    private static native int nativeGetDefineBleIdMAX ();
 
     private native long nativeNew();
     private native int nativeDelete(long jManager);
@@ -18,17 +26,24 @@ public class ARNetworkALManager
     private native int nativeUnlock(long jManager);
     private native int nativeCloseWifiNetwork(long jManager);
     
-    /* private native int nativeInitBLENetwork(long jManager, ARNetworkALBLEManager jdeviceManager, BluetoothDevice jdevice, int recvTimeoutSec); */
     private native int nativeInitBLENetwork(long jManager, Object jdeviceManager, BluetoothDevice jdevice, int recvTimeoutSec, int[] notificationIDArray);
     private native int nativeCloseBLENetwork(long jManager);
 
     private long m_managerPtr;
     private boolean m_initOk;
 
+    static
+    {
+        ARNETWORKAL_MANAGER_DEFAULT_ID_MAX = nativeGetDefineDefaultIdMAX ();
+        ARNETWORKAL_MANAGER_WIFI_ID_MAX = nativeGetDefineWifiIdMAX ();
+        ARNETWORKAL_MANAGER_BLE_ID_MAX = nativeGetDefineBleIdMAX ();
+    }
+
     /**
      * Constructor
      */
-    public ARNetworkALManager() {
+    public ARNetworkALManager()
+    {
         m_initOk = false;
         m_managerPtr = nativeNew();
 
@@ -41,7 +56,8 @@ public class ARNetworkALManager
     /**
      * Dispose
      */
-    public void dispose() {
+    public void dispose()
+    {
         if(m_initOk == true)
         {
             nativeDelete(m_managerPtr);
@@ -53,10 +69,14 @@ public class ARNetworkALManager
     /**
      * Destructor
      */
-    public void finalize () throws Throwable {
-        try {
+    public void finalize () throws Throwable
+    {
+        try
+        {
             dispose ();
-        } finally {
+        }
+        finally
+        {
             super.finalize ();
         }
     }
@@ -66,15 +86,16 @@ public class ARNetworkALManager
      * @return  Pointer C on the network manager
      */
     public long getManager ()
-        {
-            return m_managerPtr;
-        }
+    {
+        return m_managerPtr;
+    }
 
     /**
      * Get is the Manager is correctly initialized and if it is usable
      * @return true is the Manager is usable
      */
-    public boolean isCorrectlyInitialized () {
+    public boolean isCorrectlyInitialized ()
+    {
         return m_initOk;
     }
 
@@ -84,7 +105,7 @@ public class ARNetworkALManager
     public ARNETWORKAL_ERROR_ENUM initWifiNetwork(String addr, int sendingPort, int receivingPort, int recvTimeoutSec)
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
-
+        
         if(addr != null)
         {
             int intError = nativeInitWifiNetwork(m_managerPtr, addr, sendingPort, receivingPort, recvTimeoutSec);
