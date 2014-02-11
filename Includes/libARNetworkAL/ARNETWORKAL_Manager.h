@@ -140,6 +140,7 @@ struct ARNETWORKAL_Manager_t
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
+    size_t maxBufferSize; /**< Maximum size allowed for a buffer, header included. */
 };
 
 /**
