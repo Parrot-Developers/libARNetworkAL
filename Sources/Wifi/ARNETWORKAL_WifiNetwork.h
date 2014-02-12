@@ -8,15 +8,36 @@
 #ifndef _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 #define _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 
+#if defined(__APPLE__) && defined(__MACH__)
+#include <TargetConditionals.h>
+/* Stupid iOS */
+#if TARGET_OS_IPHONE == 1
+#include <netinet/ip.h>
+#else
 #include <netinet/ip.h>
 #include <netinet/udp.h>
+#endif
+#else
+#include <netinet/ip.h>
+#include <netinet/udp.h>
+#endif
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
 /** Maximum network buffer size.
  * It corresponds to the maximum amount of data you can put in a single UDP datagram.
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE == 1
+/* Use hardcoded UDP header size because iOS SDK sucks and does not contains the netinet/udp.h header. */
+#define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - 8)
+#else
 #define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - sizeof(struct udphdr))
+#endif
+#else
+#define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - sizeof(struct udphdr))
+#endif
 
 /**
  * @brief Create a new WifiNetwork object.
