@@ -8,6 +8,7 @@
 #ifndef _ARNETWORKAL_MANAGER_H_
 #define _ARNETWORKAL_MANAGER_H_
 
+#include <stdlib.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
 
