@@ -8,7 +8,6 @@
 #ifndef _ARNETWORKAL_MANAGER_H_
 #define _ARNETWORKAL_MANAGER_H_
 
-#include <stdlib.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
 
@@ -141,7 +140,7 @@ struct ARNETWORKAL_Manager_t
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
-    size_t maxBufferSize; /**< Maximum size allowed for a buffer, header included. */
+    unsigned int maxBufferSize; /**< Maximum size allowed for a buffer, header included. */
 };
 
 /**
