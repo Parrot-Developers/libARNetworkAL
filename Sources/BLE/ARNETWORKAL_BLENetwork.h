@@ -10,8 +10,6 @@
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
-#define ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE      20
-
 /**
  * @brief Create a new BLENetwork object.
  * @warning This function allocate memory

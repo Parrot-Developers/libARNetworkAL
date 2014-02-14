@@ -72,7 +72,6 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
         manager->receiverObject = (void *)NULL;
         manager->senderObject = (void *)NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
-        manager->maxBufferSize = 0;
     }
     else
     {
@@ -133,7 +132,6 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->getBandwidth = ARNETWORKAL_WifiNetwork_GetBandwidth;
         manager->bandwidthThread = ARNETWORKAL_WifiNetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
-        manager->maxBufferSize = ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE;
     }
 
     return error;
@@ -192,7 +190,6 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->getBandwidth = ARNETWORKAL_BLENetwork_GetBandwidth;
         manager->bandwidthThread = ARNETWORKAL_BLENetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
-        manager->maxBufferSize = ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE;
     }
 
 #else

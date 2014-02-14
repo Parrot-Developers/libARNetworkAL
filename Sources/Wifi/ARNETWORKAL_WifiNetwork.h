@@ -8,15 +8,7 @@
 #ifndef _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 #define _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 
-#include <netinet/ip.h>
-#include <netinet/udp.h>
-
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
-
-/** Maximum network buffer size.
- * It corresponds to the maximum amount of data you can put in a single UDP datagram.
- */
-#define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - sizeof(struct udphdr))
 
 /**
  * @brief Create a new WifiNetwork object.
