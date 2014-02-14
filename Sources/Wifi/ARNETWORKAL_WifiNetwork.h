@@ -15,9 +15,9 @@
 #define UDP_HEADER_SIZE 8
 
 /** Maximum network buffer size.
- * It corresponds to the maximum amount of data you can put in a single UDP datagram.
+ * It corresponds to the maximum amount of data you can put in a single ARNetwork packet over IP.
  */
-#define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - UDP_HEADER_SIZE)
+#define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - UDP_HEADER_SIZE - sizeof(ARNETWORKAL_Frame_t))
 
 /**
  * @brief Create a new WifiNetwork object.
