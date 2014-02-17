@@ -24,7 +24,8 @@ typedef enum
 }eARNETWORKAL_FRAME_TYPE;
 
 /**
- * @brief frame send by the ARNETWORKAL_Manager
+ * @brief Internal media-independant frame representation used by the ARNETWORKAL_Manager.
+ * @warning The actual format of the frames exchanged on the network may differ.
  */
 typedef struct
 {

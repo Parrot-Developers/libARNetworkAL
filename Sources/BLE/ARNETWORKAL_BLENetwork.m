@@ -214,7 +214,7 @@
         /** Add frame type */
         [data appendBytes:&(frame->type) length:sizeof(uint8_t)];
 
-        /** Add frame type */
+        /** Add frame seq number */
         [data appendBytes:&(frame->seq) length:sizeof(uint8_t)];
 
         /** Add frame data */
