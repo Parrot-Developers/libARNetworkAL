@@ -30,7 +30,6 @@
  *****************************************/
 
 #define ARNETWORKAL_JNIBLENETWORK_TAG "JNIBLENetwork"
-#define ARNETWORKAL_JNIBLENETWORK_SENDING_BUFFER_SIZE      20
 
 extern JavaVM *ARNETWORKAL_JNIManager_VM; /** reference to the java virtual machine */
  

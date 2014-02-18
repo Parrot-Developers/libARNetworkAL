@@ -10,6 +10,10 @@
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
+#define ARNETWORKAL_JNIBLENETWORK_SENDING_BUFFER_SIZE       (20)
+#define ARNETWORKAL_JNIBLENETWORK_SENDING_HEADER_SIZE       (2)
+#define ARNETWORKAL_JNIBLENETWORK_MAX_DATA_BUFFER_SIZE      (ARNETWORKAL_JNIBLENETWORK_SENDING_BUFFER_SIZE - ARNETWORKAL_JNIBLENETWORK_SENDING_HEADER_SIZE)
+
 /**
  * @brief Callback defines to push next frame to send to Network.
  * @param[in] manager address of the pointer on the Manager

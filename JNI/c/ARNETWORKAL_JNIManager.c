@@ -244,6 +244,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv
         manager->receive = ARNETWORKAL_JNIBLENetwork_Receive;
         manager->unlock = ARNETWORKAL_JNIBLENetwork_Unlock;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
+        manager->maxBufferSize = ARNETWORKAL_JNIBLENETWORK_MAX_DATA_BUFFER_SIZE;
     }
     
     return error;
