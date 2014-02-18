@@ -458,8 +458,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
 eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
+    ARNETWORKAL_WifiNetworkObject *wifiSendObj = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
 
-    if((((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size + frame->size) > ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE)
+    if((wifiSendObj->size + frame->size) > ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE)
     {
         result = ARNETWORKAL_MANAGER_RETURN_BUFFER_FULL;
     }
@@ -469,31 +470,31 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
         uint32_t droneEndianUInt32 = 0;
 
         /** Add type */
-        memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, &frame->type, sizeof (uint8_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += sizeof (uint8_t);
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
+        memcpy (wifiSendObj->currentFrame, &frame->type, sizeof (uint8_t));
+        wifiSendObj->currentFrame += sizeof (uint8_t);
+        wifiSendObj->size += sizeof (uint8_t);
 
         /** Add frame type */
-        memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, &frame->id, sizeof (uint8_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += sizeof (uint8_t);
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
+        memcpy (wifiSendObj->currentFrame, &frame->id, sizeof (uint8_t));
+        wifiSendObj->currentFrame += sizeof (uint8_t);
+        wifiSendObj->size += sizeof (uint8_t);
 
         /** Add frame sequence number */
-        memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, &(frame->seq), sizeof (uint8_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += sizeof (uint8_t);
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint8_t);
+        memcpy (wifiSendObj->currentFrame, &(frame->seq), sizeof (uint8_t));
+        wifiSendObj->currentFrame += sizeof (uint8_t);
+        wifiSendObj->size += sizeof (uint8_t);
 
         /** Add frame size */
         droneEndianUInt32 =  htodl (frame->size);
-        memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, &droneEndianUInt32, sizeof (uint32_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += sizeof (uint32_t);
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += sizeof (uint32_t);
+        memcpy (wifiSendObj->currentFrame, &droneEndianUInt32, sizeof (uint32_t));
+        wifiSendObj->currentFrame += sizeof (uint32_t);
+        wifiSendObj->size += sizeof (uint32_t);
 
         /** Add frame data */
         uint32_t dataSize = frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
-        memcpy (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame, frame->dataPtr, dataSize);
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->currentFrame += dataSize;
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->size += dataSize;
+        memcpy (wifiSendObj->currentFrame, frame->dataPtr, dataSize);
+        wifiSendObj->currentFrame += dataSize;
+        wifiSendObj->size += dataSize;
     }
 
     return result;
@@ -502,12 +503,13 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
 eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Frame_t *frame)
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
+    ARNETWORKAL_WifiNetworkObject *wifiRecvObj = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
 
     /** -- get a Frame of the receiving buffer -- */
     /** if the receiving buffer not contain enough data for the frame head*/
-    if (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame > ((((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size) - offsetof (ARNETWORKAL_Frame_t, dataPtr)))
+    if (wifiRecvObj->currentFrame > ((wifiRecvObj->buffer + wifiRecvObj->size) - offsetof (ARNETWORKAL_Frame_t, dataPtr)))
     {
-        if (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame == (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size))
+        if (wifiRecvObj->currentFrame == (wifiRecvObj->buffer + wifiRecvObj->size))
         {
             result = ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY;
         }
@@ -521,28 +523,28 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager
     {
         /** Get the frame from the buffer */
         /** get type */
-        memcpy (&(frame->type), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint8_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t) ;
+        memcpy (&(frame->type), wifiRecvObj->currentFrame, sizeof (uint8_t));
+        wifiRecvObj->currentFrame += sizeof (uint8_t) ;
 
         /** get id */
-        memcpy (&(frame->id), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint8_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t);
+        memcpy (&(frame->id), wifiRecvObj->currentFrame, sizeof (uint8_t));
+        wifiRecvObj->currentFrame += sizeof (uint8_t);
 
         /** get seq */
-        memcpy (&(frame->seq), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint8_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof (uint8_t);
+        memcpy (&(frame->seq), wifiRecvObj->currentFrame, sizeof (uint8_t));
+        wifiRecvObj->currentFrame += sizeof (uint8_t);
 
         /** get size */
-        memcpy (&(frame->size), ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame, sizeof (uint32_t));
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame += sizeof(uint32_t);
+        memcpy (&(frame->size), wifiRecvObj->currentFrame, sizeof (uint32_t));
+        wifiRecvObj->currentFrame += sizeof(uint32_t);
         /** convert the endianness */
         frame->size = dtohl (frame->size);
 
         /** get data address */
-        frame->dataPtr = ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame;
+        frame->dataPtr = wifiRecvObj->currentFrame;
 
         /** if the receiving buffer not contain enough data for the full frame */
-        if (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame > ((((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer + ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size) - (frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr))))
+        if (wifiRecvObj->currentFrame > ((wifiRecvObj->buffer + wifiRecvObj->size) - (frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr))))
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
@@ -551,13 +553,13 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager
     if (result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         /** offset the readingPointer on the next frame */
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame + frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
+        wifiRecvObj->currentFrame = wifiRecvObj->currentFrame + frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
     }
     else
     {
         /** reset the reading pointer to the start of the buffer */
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->currentFrame = ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer;
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->size = 0;
+        wifiRecvObj->currentFrame = wifiRecvObj->buffer;
+        wifiRecvObj->size = 0;
 
         /** reset frame */
         frame->type = ARNETWORKAL_FRAME_TYPE_UNINITIALIZED;
