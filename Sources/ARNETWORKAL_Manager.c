@@ -133,7 +133,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->getBandwidth = ARNETWORKAL_WifiNetwork_GetBandwidth;
         manager->bandwidthThread = ARNETWORKAL_WifiNetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
-        manager->maxBufferSize = ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE;
+        manager->maxBufferSize = ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE;
     }
 
     return error;

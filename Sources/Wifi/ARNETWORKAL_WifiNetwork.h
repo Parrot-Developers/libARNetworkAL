@@ -17,7 +17,7 @@
 /** Maximum network buffer size.
  * It corresponds to the maximum amount of data you can put in a single ARNetwork packet over IP.
  */
-#define ARNETWORKAL_WIFINETWORK_MAX_BUFFER_SIZE         (IP_MAXPACKET - UDP_HEADER_SIZE - offsetof(ARNETWORKAL_Frame_t, dataPtr))
+#define ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE         (IP_MAXPACKET - UDP_HEADER_SIZE - offsetof(ARNETWORKAL_Frame_t, dataPtr))
 
 /**
  * @brief Create a new WifiNetwork object.
