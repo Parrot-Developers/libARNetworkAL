@@ -122,6 +122,21 @@ typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_GetBandwidth_t) (ARNETWORKAL_Ma
 typedef void* (*ARNETWORKAL_Manager_BandwidthThread_t) (void *manager);
 
 /**
+ * @brief function called on disconnect
+ * @param manager The manager
+ * @param customData The custom data
+ */
+typedef void (*ARNETWORKAL_Manager_OnDisconnect_t) (ARNETWORKAL_Manager_t *manager, void* customData);
+
+/**
+ * @brief function called on disconnect
+ * @param manager The manager
+ * @param onDisconnectCallback The function to call on disconnection
+ * @param customData The custom data
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_SetOnDisconnectCallback_t) (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
+
+/**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
  * @see ARNETWORKAL_Manager_PushNextFrame_t
  * @see ARNETWORKAL_Manager_PopNextFrame_t
@@ -137,6 +152,7 @@ struct ARNETWORKAL_Manager_t
     ARNETWORKAL_Manager_Unlock_t unlock; /**< Manager specific unlock function */
     ARNETWORKAL_Manager_GetBandwidth_t getBandwidth; /**< Manager specific getBandwidth function */
     ARNETWORKAL_Manager_BandwidthThread_t bandwidthThread; /**< Manager specific bandwidth thread EP */
+    ARNETWORKAL_Manager_SetOnDisconnectCallback_t setOnDisconnectCallback; /**< function to set the onDisconnect callback */
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
@@ -224,5 +240,14 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *man
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseBLENetwork(ARNETWORKAL_Manager_t *manager);
+
+/**
+ * @brief set the OnDisconnect Callback
+ * @warning Only call by the ARNetworkManager 
+ * @param manager pointer on the Manager
+ * @param onDisconnectCallbak function called on disconnect
+ * @param customData custom data sent to the onDisconnectCallback
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetOnDisconnectCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
 
 #endif /** _ARNETWORKAL_MANAGER_H_ */

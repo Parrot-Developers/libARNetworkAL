@@ -62,15 +62,16 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     if (manager != NULL)
     {
         /** Initialize to default values */
-        manager->pushFrame = (ARNETWORKAL_Manager_PushFrame_t)NULL;
-        manager->popFrame = (ARNETWORKAL_Manager_PopFrame_t)NULL;
-        manager->send = (ARNETWORKAL_Manager_Send_t)NULL;
-        manager->receive = (ARNETWORKAL_Manager_Receive_t)NULL;
-        manager->unlock = (ARNETWORKAL_Manager_Unlock_t)NULL;
-        manager->getBandwidth = (ARNETWORKAL_Manager_GetBandwidth_t)NULL;
-        manager->bandwidthThread = (ARNETWORKAL_Manager_BandwidthThread_t)NULL;
-        manager->receiverObject = (void *)NULL;
-        manager->senderObject = (void *)NULL;
+        manager->pushFrame = (ARNETWORKAL_Manager_PushFrame_t) NULL;
+        manager->popFrame = (ARNETWORKAL_Manager_PopFrame_t) NULL;
+        manager->send = (ARNETWORKAL_Manager_Send_t) NULL;
+        manager->receive = (ARNETWORKAL_Manager_Receive_t) NULL;
+        manager->unlock = (ARNETWORKAL_Manager_Unlock_t) NULL;
+        manager->getBandwidth = (ARNETWORKAL_Manager_GetBandwidth_t) NULL;
+        manager->setOnDisconnectCallback = (ARNETWORKAL_Manager_SetOnDisconnectCallback_t) NULL;
+        manager->bandwidthThread = (ARNETWORKAL_Manager_BandwidthThread_t) NULL;
+        manager->receiverObject = (void *) NULL;
+        manager->senderObject = (void *) NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
         manager->maxBufferSize = 0;
     }
@@ -134,6 +135,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->bandwidthThread = ARNETWORKAL_WifiNetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
         manager->maxBufferSize = ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE;
+        manager->setOnDisconnectCallback = &ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback;
     }
 
     return error;
@@ -289,4 +291,26 @@ void* ARNETWORKAL_Manager_BandwidthThread (void *manager)
         return (void *)0;
     }
     return trueManager->bandwidthThread (manager);
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetOnDisconnectCallback (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData)
+{
+    /* -- set the OnDisconnect Callback -- */
+    
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->setOnDisconnectCallback == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->setOnDisconnectCallback (manager, onDisconnectCallback, customData);
+    }
+    
+    return error;
 }
