@@ -37,6 +37,8 @@
 #define ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE     (ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE + offsetof(ARNETWORKAL_Frame_t, dataPtr))
 #define ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE   (ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE + offsetof(ARNETWORKAL_Frame_t, dataPtr))
 
+#define ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC 5 /**< timeout in second before to account a disconnection */
+
 #define ARNETWORKAL_BW_PROGRESS_EACH_SEC 1
 #define ARNETWORKAL_BW_NB_ELEMS 10
 
@@ -54,6 +56,11 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
     uint8_t *currentFrame;
     uint32_t size;
     uint32_t timeoutSec;
+    uint32_t timeoutCounter;
+    uint32_t numberOfTimeoutForDisconnect;
+    uint8_t isDisconnected;
+    ARNETWORKAL_Manager_OnDisconnect_t onDisconnect;
+    void* onDisconnectCustomData;
     /* Bandwidth measure */
     ARSAL_Sem_t bw_sem;
     ARSAL_Sem_t bw_threadRunning;
@@ -71,13 +78,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
-    /** Check parameters */
+    /* Check parameters */
     if(manager == NULL)
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
 
-    /** Allocate sender object */
+    /* Allocate sender object */
     if(error == ARNETWORKAL_OK)
     {
         manager->senderObject = malloc(sizeof(ARNETWORKAL_WifiNetworkObject));
@@ -87,6 +94,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             wifiObj->socket = -1;
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
+            wifiObj->timeoutCounter = 0;
+            wifiObj->numberOfTimeoutForDisconnect = 0;
+            wifiObj->isDisconnected = 0;
+            wifiObj->onDisconnect = NULL;
+            wifiObj->onDisconnectCustomData = NULL;
             wifiObj->bw_index = 0;
             wifiObj->bw_current = 0;
             int i;
@@ -103,7 +115,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         }
     }
 
-    /** Allocate sender buffer */
+    /* Allocate sender buffer */
     if(error == ARNETWORKAL_OK)
     {
         ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->buffer = (uint8_t *)malloc(sizeof(uint8_t) * ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE);
@@ -118,7 +130,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         }
     }
 
-    /** Allocate receiver object */
+    /* Allocate receiver object */
     if(error == ARNETWORKAL_OK)
     {
         manager->receiverObject = malloc(sizeof(ARNETWORKAL_WifiNetworkObject));
@@ -128,6 +140,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             wifiObj->socket = -1;
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
+            wifiObj->timeoutCounter = 0;
+            wifiObj->numberOfTimeoutForDisconnect = 0;
+            wifiObj->isDisconnected = 0;
+            wifiObj->onDisconnect = NULL;
+            wifiObj->onDisconnectCustomData = NULL;
             wifiObj->bw_index = 0;
             wifiObj->bw_current = 0;
             int i;
@@ -144,7 +161,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         }
     }
 
-    /** Allocate receiver buffer */
+    /* Allocate receiver buffer */
     if(error == ARNETWORKAL_OK)
     {
         ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->buffer = (uint8_t *)malloc(sizeof(uint8_t) * ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE);
@@ -157,7 +174,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             error = ARNETWORKAL_ERROR_ALLOC;
         }
     }
-
+    
     return error;
 }
 
@@ -268,7 +285,6 @@ void *ARNETWORKAL_WifiNetwork_BandwidthThread (void *param)
         waitRes = ARSAL_Sem_Timedwait (&sender->bw_sem, &timeout);
         loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
     }
-
 
     ARSAL_Sem_Post (&reader->bw_threadRunning);
     ARSAL_Sem_Post (&sender->bw_threadRunning);
@@ -640,6 +656,9 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                 result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
                 receiverObject->size = 0;
             }
+            
+            /* reset the timeoutCounter */
+            receiverObject->timeoutCounter = 0;
         }
         else
         {
@@ -647,6 +666,25 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             // In any case, report this as a "no data" call
             result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
             receiverObject->size = 0;
+            
+            /* check th disconnection */
+            if (receiverObject->isDisconnected != 1)
+            {
+                receiverObject->timeoutCounter++;
+                
+                /* check if the connection is lost */
+                if (receiverObject->timeoutCounter >= receiverObject->numberOfTimeoutForDisconnect)
+                {
+                    /* wifi disconnected */
+                    receiverObject->isDisconnected = 1;
+                    
+                    if (receiverObject->onDisconnect != NULL)
+                    {
+                        /* Disconnect callback */
+                        receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
+                    }
+                }
+            }
         }
 
         if (FD_ISSET(receiverObject->fifo[0], &set))
@@ -660,4 +698,47 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     receiverObject->currentFrame = receiverObject->buffer;
 
     return result;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData)
+{
+    /* -- set the OnDisconnect Callback -- */
+    
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    ARNETWORKAL_WifiNetworkObject *receiverObject = NULL;
+    
+    if ((manager == NULL) || (onDisconnectCallback == NULL))
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+        if (receiverObject == NULL)
+        {
+            error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+        }
+        /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
+    }
+    /* No else: skipped by an error */ 
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        receiverObject->onDisconnect = onDisconnectCallback;
+        receiverObject->onDisconnectCustomData = customData;
+        
+        if (receiverObject->timeoutSec != 0)
+        {
+            receiverObject->numberOfTimeoutForDisconnect = (ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC / receiverObject->timeoutSec);
+        }
+        else
+        {
+            receiverObject->numberOfTimeoutForDisconnect = 1;
+        }
+    }
+    /* No else: skipped by an error */ 
+    
+    return error;
 }
