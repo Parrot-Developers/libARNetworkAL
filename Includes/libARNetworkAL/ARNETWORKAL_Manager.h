@@ -15,6 +15,8 @@
 #define ARNETWORKAL_MANAGER_WIFI_ID_MAX ARNETWORKAL_MANAGER_DEFAULT_ID_MAX /**< ID Max for WifiNetwork */
 #define ARNETWORKAL_MANAGER_BLE_ID_MAX  (ARNETWORKAL_MANAGER_DEFAULT_ID_MAX / 8) /**< ID Max for BLENetwork */
 
+#define ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC 5 /**< timeout in second before to account a disconnection */
+
 /**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
  * @see ARNETWORKAL_Manager_PushNextFrame_t

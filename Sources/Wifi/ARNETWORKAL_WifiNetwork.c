@@ -37,8 +37,6 @@
 #define ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE     (ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE + offsetof(ARNETWORKAL_Frame_t, dataPtr))
 #define ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE   (ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE + offsetof(ARNETWORKAL_Frame_t, dataPtr))
 
-#define ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC 5 /**< timeout in second before to account a disconnection */
-
 #define ARNETWORKAL_BW_PROGRESS_EACH_SEC 1
 #define ARNETWORKAL_BW_NB_ELEMS 10
 
@@ -667,8 +665,8 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
             receiverObject->size = 0;
             
-            /* check th disconnection */
-            if (receiverObject->isDisconnected != 1)
+            /* check the disconnection */
+            if ((receiverObject->isDisconnected != 1) && (! FD_ISSET(receiverObject->fifo[0], &set)))
             {
                 receiverObject->timeoutCounter++;
                 
@@ -731,7 +729,15 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
         
         if (receiverObject->timeoutSec != 0)
         {
+            /* set the number of timeout for wait at least the disconnect timeout */
+            int modulus = (ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC % receiverObject->timeoutSec);
+            
             receiverObject->numberOfTimeoutForDisconnect = (ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC / receiverObject->timeoutSec);
+            
+            if(modulus != 0)
+            {
+                receiverObject->numberOfTimeoutForDisconnect++;
+            }
         }
         else
         {
