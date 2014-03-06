@@ -54,8 +54,8 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
     uint8_t *currentFrame;
     uint32_t size;
     uint32_t timeoutSec;
-    uint32_t timeoutCounter;
-    uint32_t numberOfTimeoutForDisconnect;
+    struct timeval lastDataReceivedDate;
+    uint8_t hasAlreadyReceivedData;
     uint8_t isDisconnected;
     ARNETWORKAL_Manager_OnDisconnect_t onDisconnect;
     void* onDisconnectCustomData;
@@ -92,8 +92,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             wifiObj->socket = -1;
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
-            wifiObj->timeoutCounter = 0;
-            wifiObj->numberOfTimeoutForDisconnect = 0;
+            memset(&(wifiObj->lastDataReceivedDate), 0, sizeof(struct timeval));
+            wifiObj->hasAlreadyReceivedData = 0;
             wifiObj->isDisconnected = 0;
             wifiObj->onDisconnect = NULL;
             wifiObj->onDisconnectCustomData = NULL;
@@ -138,8 +138,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             wifiObj->socket = -1;
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
-            wifiObj->timeoutCounter = 0;
-            wifiObj->numberOfTimeoutForDisconnect = 0;
+            memset(&(wifiObj->lastDataReceivedDate), 0, sizeof(struct timeval));
+            wifiObj->hasAlreadyReceivedData = 0;
             wifiObj->isDisconnected = 0;
             wifiObj->onDisconnect = NULL;
             wifiObj->onDisconnectCustomData = NULL;
@@ -619,6 +619,9 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     int maxFd = (receiverObject->socket > receiverObject->fifo[0]) ? receiverObject->socket +1 : receiverObject->fifo[0] +1;
     // Create the timeout object
     struct timeval tv = { receiverObject->timeoutSec, 0 };
+    
+    struct timeval currentDate = {0, 0};
+    int32_t timeWithoutReception = 0; /* time in millisecond */
 
     // Wait for either file to be reading for a read
     int err = select (maxFd, &set, NULL, NULL, &tv);
@@ -630,6 +633,30 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     }
     else
     {
+        /* check the disconnection */
+        if ((receiverObject->isDisconnected != 1) && (! FD_ISSET(receiverObject->fifo[0], &set)))
+        {
+            /* get the time without reception */
+            if (receiverObject->hasAlreadyReceivedData == 1)
+            {
+                gettimeofday(&currentDate, NULL);
+                timeWithoutReception = ARSAL_Time_ComputeMsTimeDiff (&(receiverObject->lastDataReceivedDate), &currentDate);
+            }
+            
+            /* check if the connection is lost */
+            if (timeWithoutReception > ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_MS)
+            {
+                /* wifi disconnected */
+                receiverObject->isDisconnected = 1;
+                
+                if (receiverObject->onDisconnect != NULL)
+                {
+                    /* Disconnect callback */
+                    receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
+                }
+            }
+        }
+        
         // No read error (Timeout or FD ready)
         if (FD_ISSET(receiverObject->socket, &set))
         {
@@ -655,8 +682,9 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                 receiverObject->size = 0;
             }
             
-            /* reset the timeoutCounter */
-            receiverObject->timeoutCounter = 0;
+            /* save the date of the reception */
+            receiverObject->hasAlreadyReceivedData = 1;
+            gettimeofday(&(receiverObject->lastDataReceivedDate), NULL);
         }
         else
         {
@@ -664,25 +692,6 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             // In any case, report this as a "no data" call
             result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
             receiverObject->size = 0;
-            
-            /* check the disconnection */
-            if ((receiverObject->isDisconnected != 1) && (! FD_ISSET(receiverObject->fifo[0], &set)))
-            {
-                receiverObject->timeoutCounter++;
-                
-                /* check if the connection is lost */
-                if (receiverObject->timeoutCounter >= receiverObject->numberOfTimeoutForDisconnect)
-                {
-                    /* wifi disconnected */
-                    receiverObject->isDisconnected = 1;
-                    
-                    if (receiverObject->onDisconnect != NULL)
-                    {
-                        /* Disconnect callback */
-                        receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
-                    }
-                }
-            }
         }
 
         if (FD_ISSET(receiverObject->fifo[0], &set))
@@ -726,23 +735,6 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
     {
         receiverObject->onDisconnect = onDisconnectCallback;
         receiverObject->onDisconnectCustomData = customData;
-        
-        if (receiverObject->timeoutSec != 0)
-        {
-            /* set the number of timeout for wait at least the disconnect timeout */
-            int modulus = (ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC % receiverObject->timeoutSec);
-            
-            receiverObject->numberOfTimeoutForDisconnect = (ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_SEC / receiverObject->timeoutSec);
-            
-            if(modulus != 0)
-            {
-                receiverObject->numberOfTimeoutForDisconnect++;
-            }
-        }
-        else
-        {
-            receiverObject->numberOfTimeoutForDisconnect = 1;
-        }
     }
     /* No else: skipped by an error */ 
     
