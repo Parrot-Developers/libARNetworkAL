@@ -9,6 +9,7 @@
 #define _ARNETWORKAL_BLENETWORK_PRIVATE_H_
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
+#include <libARNetworkAL/ARNETWORKAL_Error.h>
 
 #define ARNETWORKAL_BLENETWORK_MEDIA_MTU            20
 #define ARNETWORKAL_BLENETWORK_HEADER_SIZE          2
@@ -95,5 +96,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
  * @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
+
+/**
+ * @brief set the OnDisconnect Callback
+ * @param manager pointer on the Manager
+ * @param onDisconnectCallbak function called on disconnect
+ * @param customData custom data to send to the onDisconnectCallback
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_SetOnDisconnectCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
 
 #endif /** _ARNETWORKAL_BLENETWORK_PRIVATE_H_ */

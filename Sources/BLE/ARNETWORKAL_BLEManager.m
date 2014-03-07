@@ -12,8 +12,10 @@
  *
  *****************************************/
 #import "ARNETWORKAL_BLEManager.h"
+#include <libARNetworkAL/ARNETWORKAL_Error.h>
 
 #define ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG (0)
+#define ARNETWORKAL_BLEMANAGER_CONNECTION_TIMEOUT_SEC (5)
 
 #pragma mark CBUUID (String Extraction extension)
 @implementation CBUUID (StringExtraction)
@@ -43,7 +45,17 @@
 @end
 
 #pragma mark ARNETWORKAL_BLEManager implementation
-@interface ARNETWORKAL_BLEManager (private)
+@interface ARNETWORKAL_BLEManager ()
+
+@property (nonatomic, assign) eARNETWORKAL_ERROR discoverServicesError;
+@property (nonatomic, assign) eARNETWORKAL_ERROR discoverCharacteristicsError;
+@property (nonatomic, assign) eARNETWORKAL_ERROR configurationCharacteristicError;
+
+@property (nonatomic, assign) BOOL askDisconnection;
+@property (nonatomic, assign) BOOL isDiscoveringServices;
+@property (nonatomic, assign) BOOL isDiscoveringCharacteristics;
+@property (nonatomic, assign) BOOL isConfiguringCharacteristics;
+
 - (void)ARNETWORKAL_BLEManager_Init;
 @end
 
@@ -53,6 +65,7 @@
 @synthesize configurationCharacteristicError;
 @synthesize activePeripheral;
 @synthesize characteristicsNotifications;
+@synthesize delegate = _delegate;
 
 SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_Init);
 
@@ -60,10 +73,14 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 - (void)ARNETWORKAL_BLEManager_Init
 {
     self.activePeripheral = nil;
-    self.discoverServicesError = nil;
-    self.discoverCharacteristicsError = nil;
+    self.discoverServicesError = ARNETWORKAL_OK;
+    self.discoverCharacteristicsError = ARNETWORKAL_OK;
     self.characteristicsNotifications = [NSMutableArray array];
-
+    _askDisconnection = NO;
+    _isDiscoveringServices = NO;
+    _isDiscoveringCharacteristics = NO;
+    _isConfiguringCharacteristics = NO;
+    
     ARSAL_Sem_Init(&connectionSem, 0, 0);
     ARSAL_Sem_Init(&disconnectionSem, 0, 0);
     ARSAL_Sem_Init(&discoverServicesSem, 0, 0);
@@ -74,91 +91,144 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     ARSAL_Mutex_Init(&readCharacteristicMutex);
 }
 
-- (BOOL)discoverNetworkServices:(NSArray *)servicesUUIDs
+- (eARNETWORKAL_ERROR)discoverNetworkServices:(NSArray *)servicesUUIDs
 {
-    BOOL result = NO;
-    // If there is an active peripheral, disconnecting it
-    if(self.activePeripheral != nil)
+    eARNETWORKAL_ERROR result = ARNETWORKAL_OK;
+    
+    @synchronized (self)
     {
-        self.discoverServicesError = nil;
-        [self.activePeripheral discoverServices:nil];
-        ARSAL_Sem_Wait(&discoverServicesSem);
-        result = (self.discoverServicesError == nil);
-        self.discoverServicesError = nil;
+        // If there is an active peripheral, disconnecting it
+        if(self.activePeripheral != nil)
+        {
+            _isDiscoveringServices = YES;
+            
+            self.discoverServicesError = ARNETWORKAL_OK;
+            [self.activePeripheral discoverServices:nil];
+            ARSAL_Sem_Wait(&discoverServicesSem);
+            result = self.discoverServicesError;
+            self.discoverServicesError = ARNETWORKAL_OK;
+            
+            _isDiscoveringServices = NO;
+        }
+        else
+        {
+            result = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+        }
     }
-
+    
     return result;
 }
 
-- (BOOL)setNotificationCharacteristic:(CBCharacteristic *)characteristic
+- (eARNETWORKAL_ERROR)setNotificationCharacteristic:(CBCharacteristic *)characteristic
 {
-    BOOL result = NO;
-    // If there is an active peripheral, disconnecting it
-    if(self.activePeripheral != nil)
+    eARNETWORKAL_ERROR result = ARNETWORKAL_OK;
+    @synchronized (self)
     {
-        self.configurationCharacteristicError = nil;
-        [self.activePeripheral setNotifyValue:YES forCharacteristic:characteristic];
-        ARSAL_Sem_Wait(&configurationSem);
-        result = (self.configurationCharacteristicError == nil);
-        self.configurationCharacteristicError = nil;
+        // If there is an active peripheral, disconnecting it
+        if(self.activePeripheral != nil)
+        {
+            _isConfiguringCharacteristics = YES;
+            
+            self.configurationCharacteristicError = ARNETWORKAL_OK;
+            [self.activePeripheral setNotifyValue:YES forCharacteristic:characteristic];
+            ARSAL_Sem_Wait(&configurationSem);
+            result = self.configurationCharacteristicError;
+            self.configurationCharacteristicError = ARNETWORKAL_OK;
+            
+            _isConfiguringCharacteristics = NO;
+        }
+        else
+        {
+            result = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+        }
     }
-
+    
     return result;
 }
 
-- (BOOL)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service
+- (eARNETWORKAL_ERROR)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service
 {
-    BOOL result = NO;
-    // If there is an active peripheral, disconnecting it
-    if(self.activePeripheral != nil)
+    eARNETWORKAL_ERROR result = ARNETWORKAL_OK;
+    @synchronized (self)
     {
-        NSLog(@"Service : %@", [service.UUID representativeString]);
-        self.discoverCharacteristicsError = nil;
-        [self.activePeripheral discoverCharacteristics:nil forService:service];
-        ARSAL_Sem_Wait(&discoverCharacteristicsSem);
-        result = (self.discoverCharacteristicsError == nil);
-        self.discoverCharacteristicsError = nil;
+        // If there is an active peripheral, disconnecting it
+        if(self.activePeripheral != nil)
+        {
+            _isDiscoveringCharacteristics = YES;
+            
+            NSLog(@"Service : %@", [service.UUID representativeString]);
+            self.discoverCharacteristicsError = ARNETWORKAL_OK;
+            [self.activePeripheral discoverCharacteristics:nil forService:service];
+            ARSAL_Sem_Wait(&discoverCharacteristicsSem);
+            result = self.discoverCharacteristicsError;
+            self.discoverCharacteristicsError = ARNETWORKAL_OK;
+            
+            _isDiscoveringCharacteristics = NO;
+        }
+        else
+        {
+            result = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+        }
     }
-
+    
     return result;
 }
 
-- (BOOL)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager
+- (eARNETWORKAL_ERROR)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager
 {
-    id <CBCentralManagerDelegate> previousDelegate = centralManager.delegate;
-    [centralManager setDelegate:self];
-
-    // If there is an active peripheral, disconnecting it
-    if(self.activePeripheral != nil)
+    eARNETWORKAL_ERROR result = ARNETWORKAL_OK;
+    const struct timespec connectionTimeout = {
+        .tv_sec = ARNETWORKAL_BLEMANAGER_CONNECTION_TIMEOUT_SEC,
+        .tv_nsec = 0,
+    };
+    
+    @synchronized (self)
     {
-        [self disconnectPeripheral:self.activePeripheral withCentralManager:centralManager];
-        ARSAL_Sem_Wait(&disconnectionSem);
+        [centralManager addDelegate:self];
+
+        // If there is an active peripheral, disconnecting it
+        if(self.activePeripheral != nil)
+        {
+            [self disconnectPeripheral:self.activePeripheral withCentralManager:centralManager];
+        }
+        
+        // Connection to the new peripheral
+        [centralManager connectPeripheral:peripheral options:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], CBConnectPeripheralOptionNotifyOnDisconnectionKey, nil]];
+        
+        if(ARSAL_Sem_Timedwait(&connectionSem, &connectionTimeout) != 0)
+        {
+            /* disconnect timeout */
+            [centralManager cancelPeripheralConnection:peripheral];
+        }
+        
+        if (self.activePeripheral != nil)
+        {
+            self.activePeripheral.delegate = self;
+        }
+        else
+        {
+            /* Connection failed */
+            result = ARNETWORKAL_ERROR_BLE_CONNECTION;
+        }
     }
-
-    // Connection to the new peripheral
-    self.activePeripheral = nil;
-    [centralManager connectPeripheral:peripheral options:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], CBConnectPeripheralOptionNotifyOnDisconnectionKey, nil]];
-    ARSAL_Sem_Wait(&connectionSem);
-    self.activePeripheral = peripheral;
-    self.activePeripheral.delegate = self;
-    [centralManager setDelegate:previousDelegate];
-
-    return (self.activePeripheral != nil);
+    
+    return result;
 }
 
-- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager
+- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager
 {
-    if(self.activePeripheral != nil)
+    @synchronized (self)
     {
-        id <CBCentralManagerDelegate> previousDelegate = centralManager.delegate;
-        [centralManager setDelegate:self];
+        if (self.activePeripheral != nil)
+        {
+            _askDisconnection = YES;
+            
+            [centralManager cancelPeripheralConnection:activePeripheral];
+            
+            ARSAL_Sem_Wait(&disconnectionSem);
 
-        [centralManager cancelPeripheralConnection:activePeripheral];
-        ARSAL_Sem_Wait(&disconnectionSem);
-        self.activePeripheral.delegate = nil;
-        self.activePeripheral = nil;
-
-        [centralManager setDelegate:previousDelegate];
+           [centralManager removeDelegate:self];
+        }
     }
 
     return (self.activePeripheral == nil);
@@ -202,6 +272,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d", __FUNCTION__, __LINE__);
 #endif
+    
     switch(central.state)
     {
     case CBCentralManagerStatePoweredOn:
@@ -236,6 +307,9 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__, peripheral);
 #endif
+    
+    self.activePeripheral = peripheral;
+    
     ARSAL_Sem_Post(&connectionSem);
 }
 
@@ -244,6 +318,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d : %@", __FUNCTION__, __LINE__, peripheral);
 #endif
+
     ARSAL_Sem_Post(&connectionSem);
 }
 
@@ -252,7 +327,46 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d : %@", __FUNCTION__, __LINE__, peripheral);
 #endif
-    ARSAL_Sem_Post(&disconnectionSem);
+    
+    if((self.activePeripheral != nil) && (self.activePeripheral == peripheral))
+    {
+        self.activePeripheral.delegate = nil;
+        self.activePeripheral = nil;
+        
+        ARSAL_Sem_Post(&disconnectionSem);
+        
+        
+        /* if activePeripheral is discovering services */
+        if(_isDiscoveringServices)
+        {
+            self.discoverServicesError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            ARSAL_Sem_Post(&discoverServicesSem);
+        }
+        
+        /* if activePeripheral is discovering Characteristics */
+        if(_isDiscoveringCharacteristics)
+        {
+            self.discoverCharacteristicsError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            ARSAL_Sem_Post(&discoverCharacteristicsSem);
+        }
+        
+        /* if activePeripheral is configuring Characteristics */
+        if(_isConfiguringCharacteristics)
+        {
+            self.configurationCharacteristicError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            ARSAL_Sem_Post(&configurationSem);
+        }
+        
+        /* Notify delegate */
+        if(!_askDisconnection)
+        {
+            if ((_delegate != nil) && ([_delegate respondsToSelector:@selector(onBLEDisconnect)]))
+            {
+                [_delegate onBLEDisconnect];
+            }
+        }
+        _askDisconnection = NO;
+    }
 }
 
 #pragma mark CBPeripheralDelegate
@@ -261,7 +375,12 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@", __FUNCTION__, __LINE__, peripheral);
 #endif
-    self.discoverServicesError = error;
+    
+    if (error != nil)
+    {
+        self.discoverServicesError = ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
+    }
+    
     ARSAL_Sem_Post(&discoverServicesSem);
 }
 
@@ -270,7 +389,12 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@", __FUNCTION__, __LINE__, peripheral);
 #endif
-    self.discoverCharacteristicsError = error;
+    
+    if (error != nil)
+    {
+        self.discoverCharacteristicsError = ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING;
+    }
+    
     ARSAL_Sem_Post(&discoverCharacteristicsSem);
 }
 
@@ -299,7 +423,12 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
     NSLog(@"%s:%d - %@ : %@", __FUNCTION__, __LINE__, [characteristic.UUID representativeString], [error localizedDescription]);
 #endif
-    self.configurationCharacteristicError = error;
+    
+    if (error != nil)
+    {
+        self.configurationCharacteristicError = ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
+    }
+    
     ARSAL_Sem_Post(&configurationSem);
 }
 
@@ -332,39 +461,42 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 
 - (void)reset
 {
-    /* reset all Semaphores */
-#if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
-    NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__, peripheral);
-#endif
-    
-    while (ARSAL_Sem_Trywait(&connectionSem) > 0)
+    @synchronized (self)
     {
-        /* Do nothing*/
-    }
-    
-    while (ARSAL_Sem_Trywait(&discoverServicesSem) > 0)
-    {
-        /* Do nothing*/
-    }
-    
-    while (ARSAL_Sem_Trywait(&discoverCharacteristicsSem) > 0)
-    {
-        /* Do nothing*/
-    }
-    
-    while (ARSAL_Sem_Trywait(&disconnectionSem) > 0)
-    {
-        /* Do nothing*/
-    }
-    
-    while (ARSAL_Sem_Trywait(&configurationSem) > 0)
-    {
-        /* Do nothing*/
-    }
-    
-    while (ARSAL_Sem_Trywait(&readCharacteristicsSem) > 0)
-    {
-        /* Do nothing*/
+        /* reset all Semaphores */
+    #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
+        NSLog(@"%s:%d", __FUNCTION__, __LINE__);
+    #endif
+        
+        while (ARSAL_Sem_Trywait(&connectionSem) == 0)
+        {
+            /* Do nothing*/
+        }
+        
+        while (ARSAL_Sem_Trywait(&discoverServicesSem) == 0)
+        {
+            /* Do nothing*/
+        }
+        
+        while (ARSAL_Sem_Trywait(&discoverCharacteristicsSem) == 0)
+        {
+            /* Do nothing*/
+        }
+        
+        while (ARSAL_Sem_Trywait(&disconnectionSem) == 0)
+        {
+            /* Do nothing*/
+        }
+        
+        while (ARSAL_Sem_Trywait(&configurationSem) == 0)
+        {
+            /* Do nothing*/
+        }
+        
+        while (ARSAL_Sem_Trywait(&readCharacteristicsSem) == 0)
+        {
+            /* Do nothing*/
+        }
     }
 }
 

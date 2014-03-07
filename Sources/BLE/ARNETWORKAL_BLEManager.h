@@ -10,12 +10,18 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreBluetooth/CoreBluetooth.h>
-#include <libARSAL/ARSAL_Sem.h>
-#include <libARSAL/ARSAL_Mutex.h>
+#include <libARSAL/ARSAL.h>
+#include <libARSAL/ARSAL_CentralManager.h>
 #include "ARNETWORKAL_Singleton.h"
+#include <libARNetworkAL/ARNETWORKAL_Error.h>
 
 @interface CBUUID (StringExtraction)
 - (NSString *)representativeString;
+@end
+
+@protocol ARNetworkBLEManagerDelegate <NSObject>
+@required
+- (void)onBLEDisconnect;
 @end
 
 @interface ARNETWORKAL_BLEManager : NSObject <CBCentralManagerDelegate, CBPeripheralDelegate>
@@ -31,19 +37,17 @@
     ARSAL_Sem_t configurationSem;
 }
 
-@property (nonatomic, retain) NSError *discoverServicesError;
-@property (nonatomic, retain) NSError *discoverCharacteristicsError;
-@property (nonatomic, retain) NSError *configurationCharacteristicError;
+@property (nonatomic, assign) id <ARNetworkBLEManagerDelegate> delegate;
 @property (nonatomic, retain) CBPeripheral *activePeripheral;
 @property (nonatomic, retain) NSMutableArray *characteristicsNotifications;
 
 DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
-- (BOOL)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
-- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(CBCentralManager *)centralManager;
-- (BOOL)discoverNetworkServices:(NSArray *)servicesUUIDs;
-- (BOOL)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service;
-- (BOOL)setNotificationCharacteristic:(CBCharacteristic *)characteristic;
+- (eARNETWORKAL_ERROR)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager;
+- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager;
+- (eARNETWORKAL_ERROR)discoverNetworkServices:(NSArray *)servicesUUIDs;
+- (eARNETWORKAL_ERROR)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service;
+- (eARNETWORKAL_ERROR)setNotificationCharacteristic:(CBCharacteristic *)characteristic;
 - (BOOL)writeData:(NSData *)data toCharacteristic:(CBCharacteristic *)characteristic;
 - (BOOL)readData:(NSMutableArray *)mutableArray;
 - (void)unlock;

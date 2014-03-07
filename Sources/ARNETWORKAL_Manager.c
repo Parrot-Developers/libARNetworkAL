@@ -195,7 +195,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->bandwidthThread = ARNETWORKAL_BLENetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_BLE_ID_MAX;
         manager->maxBufferSize = ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE;
-        manager->setOnDisconnectCallback = NULL;
+        manager->setOnDisconnectCallback = ARNETWORKAL_BLENetwork_SetOnDisconnectCallback;
     }
 
 #else
