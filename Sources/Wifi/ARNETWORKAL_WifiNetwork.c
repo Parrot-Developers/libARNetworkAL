@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <fcntl.h>
 
 #include <libARSAL/ARSAL.h>
 
@@ -55,8 +56,8 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
     uint32_t size;
     uint32_t timeoutSec;
     struct timeval lastDataReceivedDate;
-    uint8_t hasAlreadyReceivedData;
     uint8_t isDisconnected;
+    uint8_t recvIsFlushed;
     ARNETWORKAL_Manager_OnDisconnect_t onDisconnect;
     void* onDisconnectCustomData;
     /* Bandwidth measure */
@@ -66,6 +67,21 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
     uint32_t bw_elements[ARNETWORKAL_BW_NB_ELEMS];
     uint32_t bw_current;
 } ARNETWORKAL_WifiNetworkObject;
+
+
+/**
+ * @brief Check if the wifi network is stay too long without receive.
+ * @param receiverObject wifi receiver object
+ * @return 0 if is false and 1 in otherwise
+ */
+uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(ARNETWORKAL_WifiNetworkObject *receiverObject);
+
+
+/**
+ * @brief Flush the receive socket.
+ * @param receiverObject wifi receiver object
+ */
+void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject);
 
 /*****************************************
  *
@@ -93,8 +109,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
             memset(&(wifiObj->lastDataReceivedDate), 0, sizeof(struct timeval));
-            wifiObj->hasAlreadyReceivedData = 0;
             wifiObj->isDisconnected = 0;
+            wifiObj->recvIsFlushed = 0;
             wifiObj->onDisconnect = NULL;
             wifiObj->onDisconnectCustomData = NULL;
             wifiObj->bw_index = 0;
@@ -139,8 +155,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
             memset(&(wifiObj->lastDataReceivedDate), 0, sizeof(struct timeval));
-            wifiObj->hasAlreadyReceivedData = 0;
             wifiObj->isDisconnected = 0;
+            wifiObj->recvIsFlushed = 0;
             wifiObj->onDisconnect = NULL;
             wifiObj->onDisconnectCustomData = NULL;
             wifiObj->bw_index = 0;
@@ -415,6 +431,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
     struct sockaddr_in recvSin;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
     int errorBind = 0;
+    ARNETWORKAL_WifiNetworkObject *wifiReceiver = NULL;
+    int flags = 0;
 
     /** Check parameters */
     if((manager == NULL) || (manager->receiverObject == NULL))
@@ -425,16 +443,18 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
     /** Create sender Object */
     if(error == ARNETWORKAL_OK)
     {
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
-        if(manager->receiverObject < 0)
+        wifiReceiver = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+        
+        wifiReceiver->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
+        if (manager->receiverObject < 0)
         {
             error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
         }
-        if (pipe(((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->fifo) != 0)
+        if (pipe(wifiReceiver->fifo) != 0)
         {
             error = ARNETWORKAL_ERROR_FIFO_INIT;
         }
-        ((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->timeoutSec = timeoutSec;
+        wifiReceiver->timeoutSec = timeoutSec;
     }
 
     /** socket initialization */
@@ -447,9 +467,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
         /** set the socket timeout */
         timeout.tv_sec = timeoutSec;
         timeout.tv_usec = 0;
-        ARSAL_Socket_Setsockopt (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof (timeout));
+        ARSAL_Socket_Setsockopt (wifiReceiver->socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof (timeout));
+        
+        /* set the socket non blocking */
+        flags = fcntl(wifiReceiver->socket, F_GETFL, 0);
+        fcntl(wifiReceiver->socket, F_SETFL, flags | O_NONBLOCK);
 
-        errorBind = ARSAL_Socket_Bind (((ARNETWORKAL_WifiNetworkObject *)manager->receiverObject)->socket, (struct sockaddr*)&recvSin, sizeof (recvSin));
+        errorBind = ARSAL_Socket_Bind (wifiReceiver->socket, (struct sockaddr*)&recvSin, sizeof (recvSin));
 
         if (errorBind !=0)
         {
@@ -604,11 +628,12 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
 
 eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_t *manager)
 {
+    
+    /** -- receiving data present on the socket -- */
+    
+    /** local declarations */
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
-
-    /** -- receiving data present on the socket -- */
-    /** local declarations */
 
     // Create a fd_set to select on both the socket and the "cancel" pipe
     fd_set set;
@@ -620,8 +645,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     // Create the timeout object
     struct timeval tv = { receiverObject->timeoutSec, 0 };
     
-    struct timeval currentDate = {0, 0};
-    int32_t timeWithoutReception = 0; /* time in millisecond */
+    /* initialize the lastDataReceivedDate at the first running of the function */
+    if ((receiverObject->lastDataReceivedDate.tv_sec == 0) && (receiverObject->lastDataReceivedDate.tv_usec == 0))
+    {
+        gettimeofday(&(receiverObject->lastDataReceivedDate), NULL);
+    }
 
     // Wait for either file to be reading for a read
     int err = select (maxFd, &set, NULL, NULL, &tv);
@@ -633,58 +661,50 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     }
     else
     {
-        /* check the disconnection */
-        if ((receiverObject->isDisconnected != 1) && (! FD_ISSET(receiverObject->fifo[0], &set)))
-        {
-            /* get the time without reception */
-            if (receiverObject->hasAlreadyReceivedData == 1)
-            {
-                gettimeofday(&currentDate, NULL);
-                timeWithoutReception = ARSAL_Time_ComputeMsTimeDiff (&(receiverObject->lastDataReceivedDate), &currentDate);
-            }
-            
-            /* check if the connection is lost */
-            if (timeWithoutReception > ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_MS)
-            {
-                /* wifi disconnected */
-                receiverObject->isDisconnected = 1;
-                
-                if (receiverObject->onDisconnect != NULL)
-                {
-                    /* Disconnect callback */
-                    receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
-                }
-            }
-        }
-        
         // No read error (Timeout or FD ready)
         if (FD_ISSET(receiverObject->socket, &set))
         {
-            // If the socket is ready, read data
-            int size = ARSAL_Socket_Recv (receiverObject->socket, receiverObject->buffer, ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE, 0);
-            if (size > 0)
+            /* If wifi network is too long without receive */
+            if ((receiverObject->recvIsFlushed == 0 ) && (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(receiverObject) != 0))
             {
-                // Save the number of bytes read
-                receiverObject->size = size;
-                receiverObject->bw_current += size;
-            }
-            else if (size == 0)
-            {
-                // Should never go here (if the socket is ready, some data must be available)
-                // But the case in handled.
-                result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
-                receiverObject->size = 0;
+                /* the data in the socket are too old*/
+                /* flush the socket  */
+                ARNETWORKAL_WifiNetwork_FlushReceiveSocket (receiverObject);
             }
             else
             {
-                // Error in recv call
-                result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
-                receiverObject->size = 0;
+                // If the socket is ready, read data
+                int size = ARSAL_Socket_Recv (receiverObject->socket, receiverObject->buffer, ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE, 0);
+                if (size > 0)
+                {
+                    // Save the number of bytes read
+                    receiverObject->size = size;
+                    receiverObject->bw_current += size;
+                    
+                    /* Data received reset the reception flush state */
+                    receiverObject->recvIsFlushed = 0;
+                }
+                else if (size == 0)
+                {
+                    // Should never go here (if the socket is ready, some data must be available)
+                    // But the case in handled.
+                    result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
+                    receiverObject->size = 0;
+                }
+                else
+                {
+                    // Error in recv call
+                    result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
+                    receiverObject->size = 0;
+                }
+                
+                /* Check if the thread has not been stopped too long between ARSAL_Socket_Recv() and the save of the reception date. */
+                if (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(receiverObject) == 0)
+                {
+                    /* save the date of the reception */
+                    gettimeofday(&(receiverObject->lastDataReceivedDate), NULL);
+                }
             }
-            
-            /* save the date of the reception */
-            receiverObject->hasAlreadyReceivedData = 1;
-            gettimeofday(&(receiverObject->lastDataReceivedDate), NULL);
         }
         else
         {
@@ -692,6 +712,23 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             // In any case, report this as a "no data" call
             result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
             receiverObject->size = 0;
+            
+            /* check the disconnection */
+            if ((receiverObject->isDisconnected != 1) && (! FD_ISSET(receiverObject->fifo[0], &set)))
+            {
+                /* check if the connection is lost */
+                if (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(receiverObject) != 0)
+                {
+                    /* wifi disconnected */
+                    receiverObject->isDisconnected = 1;
+                    
+                    if (receiverObject->onDisconnect != NULL)
+                    {
+                        /* Disconnect callback */
+                        receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
+                    }
+                }
+            }
         }
 
         if (FD_ISSET(receiverObject->fifo[0], &set))
@@ -739,4 +776,101 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
     /* No else: skipped by an error */ 
     
     return error;
+}
+
+/*****************************************
+ *
+ *             private implementation :
+ *
+ *****************************************/
+
+uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_WifiNetworkObject *receiverObject)
+{
+    /* -- Check if the wifi network is stay too long without receive. -- */
+    
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    uint8_t isTooLongWithoutReceive = 0;
+    struct timeval currentDate = {0, 0};
+    int32_t timeWithoutReception = 0; /* time in millisecond */
+    
+    /* check parameters */
+    if(receiverObject == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        /* get the time without reception */
+        gettimeofday(&currentDate, NULL);
+        timeWithoutReception = ARSAL_Time_ComputeMsTimeDiff (&(receiverObject->lastDataReceivedDate), &currentDate);
+        
+        /* Check if the wifi network is stay too long without receive */
+        if (timeWithoutReception > ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_MS)
+        {
+            isTooLongWithoutReceive = 1;
+        }
+    }
+    /* No else: skipped by an error */
+
+    if(error != ARNETWORKAL_OK)
+    {
+        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error occurred : %s", ARNETWORKAL_Error_ToString (error));
+    }
+    /* No else: no error to print */
+
+    return isTooLongWithoutReceive;
+}
+
+void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject)
+{
+    /* -- flush the receive socket -- */
+    
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    int sizeRecv = 0;
+    
+    
+    /* check parameters */
+    if(receiverObject == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        while ((receiverObject->recvIsFlushed == 0) && (error == ARNETWORKAL_OK))
+        {
+            sizeRecv = ARSAL_Socket_Recv (receiverObject->socket, receiverObject->buffer, ARNETWORKAL_WIFINETWORK_RECEIVING_BUFFER_SIZE, 0);
+            
+            if (sizeRecv == 0)
+            {
+                /* Socket shutdown */
+                receiverObject->recvIsFlushed = 1;
+            }
+            else if (sizeRecv == -1)
+            {
+                switch (errno)
+                {
+                    case EAGAIN:
+                        /* No data */
+                        receiverObject->recvIsFlushed = 1;
+                        break;
+                        
+                    default:
+                        error = ARNETWORKAL_ERROR_WIFI;
+                        break;
+                }
+            }
+            /* No Else : data has been read and dropped */
+        }
+    }
+    /* No else: skipped by an error */
+
+    if(error != ARNETWORKAL_OK)
+    {
+        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error occurred : %s", ARNETWORKAL_Error_ToString (error));
+    }
+    /* No else: no error to print */
 }
