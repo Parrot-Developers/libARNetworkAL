@@ -227,20 +227,13 @@ void ARNETWORKAL_Manager_Delete (ARNETWORKAL_Manager_t **manager)
 {
     /** -- Delete the Manager -- */
 
-    /** local declarations */
-    ARNETWORKAL_Manager_t *localManager = NULL;
-
-    if (localManager)
+    if (manager != NULL)
     {
-        localManager = *manager;
-
-        if (localManager)
+        if ((*manager) != NULL)
         {
-            free (localManager);
-            localManager = NULL;
+            free (*manager);
+            (*manager) = NULL;
         }
-
-        *manager = NULL;
     }
 }
 

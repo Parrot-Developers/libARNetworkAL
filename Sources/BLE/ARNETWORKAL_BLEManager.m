@@ -60,11 +60,11 @@
 @end
 
 @implementation ARNETWORKAL_BLEManager
-@synthesize discoverServicesError;
-@synthesize discoverCharacteristicsError;
-@synthesize configurationCharacteristicError;
-@synthesize activePeripheral;
-@synthesize characteristicsNotifications;
+@synthesize discoverServicesError = _discoverServicesError;
+@synthesize discoverCharacteristicsError = _discoverCharacteristicsError;
+@synthesize configurationCharacteristicError = _configurationCharacteristicError;
+@synthesize activePeripheral = _activePeripheral;
+@synthesize characteristicsNotifications = _characteristicsNotifications;
 @synthesize delegate = _delegate;
 
 SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_Init);
@@ -72,10 +72,10 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 // Initializing function to synhtesize singleton
 - (void)ARNETWORKAL_BLEManager_Init
 {
-    self.activePeripheral = nil;
-    self.discoverServicesError = ARNETWORKAL_OK;
-    self.discoverCharacteristicsError = ARNETWORKAL_OK;
-    self.characteristicsNotifications = [NSMutableArray array];
+    _activePeripheral = nil;
+    _discoverServicesError = ARNETWORKAL_OK;
+    _discoverCharacteristicsError = ARNETWORKAL_OK;
+    _characteristicsNotifications = [NSMutableArray array];
     _askDisconnection = NO;
     _isDiscoveringServices = NO;
     _isDiscoveringCharacteristics = NO;
@@ -98,15 +98,15 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     @synchronized (self)
     {
         // If there is an active peripheral, disconnecting it
-        if(self.activePeripheral != nil)
+        if(_activePeripheral != nil)
         {
             _isDiscoveringServices = YES;
             
-            self.discoverServicesError = ARNETWORKAL_OK;
+            _discoverServicesError = ARNETWORKAL_OK;
             [self.activePeripheral discoverServices:nil];
             ARSAL_Sem_Wait(&discoverServicesSem);
             result = self.discoverServicesError;
-            self.discoverServicesError = ARNETWORKAL_OK;
+            _discoverServicesError = ARNETWORKAL_OK;
             
             _isDiscoveringServices = NO;
         }
@@ -125,15 +125,15 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     @synchronized (self)
     {
         // If there is an active peripheral, disconnecting it
-        if(self.activePeripheral != nil)
+        if(_activePeripheral != nil)
         {
             _isConfiguringCharacteristics = YES;
             
-            self.configurationCharacteristicError = ARNETWORKAL_OK;
+            _configurationCharacteristicError = ARNETWORKAL_OK;
             [self.activePeripheral setNotifyValue:YES forCharacteristic:characteristic];
             ARSAL_Sem_Wait(&configurationSem);
             result = self.configurationCharacteristicError;
-            self.configurationCharacteristicError = ARNETWORKAL_OK;
+            _configurationCharacteristicError = ARNETWORKAL_OK;
             
             _isConfiguringCharacteristics = NO;
         }
@@ -157,11 +157,11 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
             _isDiscoveringCharacteristics = YES;
             
             NSLog(@"Service : %@", [service.UUID representativeString]);
-            self.discoverCharacteristicsError = ARNETWORKAL_OK;
-            [self.activePeripheral discoverCharacteristics:nil forService:service];
+            _discoverCharacteristicsError = ARNETWORKAL_OK;
+            [_activePeripheral discoverCharacteristics:nil forService:service];
             ARSAL_Sem_Wait(&discoverCharacteristicsSem);
-            result = self.discoverCharacteristicsError;
-            self.discoverCharacteristicsError = ARNETWORKAL_OK;
+            result = _discoverCharacteristicsError;
+            _discoverCharacteristicsError = ARNETWORKAL_OK;
             
             _isDiscoveringCharacteristics = NO;
         }
@@ -184,12 +184,13 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     
     @synchronized (self)
     {
+        
         [centralManager addDelegate:self];
 
         // If there is an active peripheral, disconnecting it
-        if(self.activePeripheral != nil)
+        if(_activePeripheral != nil)
         {
-            [self disconnectPeripheral:self.activePeripheral withCentralManager:centralManager];
+            [self disconnectPeripheral:_activePeripheral withCentralManager:centralManager];
         }
         
         // Connection to the new peripheral
@@ -201,15 +202,16 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
             [centralManager cancelPeripheralConnection:peripheral];
         }
         
-        if (self.activePeripheral != nil)
+        if (_activePeripheral != nil)
         {
-            self.activePeripheral.delegate = self;
+            _activePeripheral.delegate = self;
         }
         else
         {
             /* Connection failed */
             result = ARNETWORKAL_ERROR_BLE_CONNECTION;
         }
+        
     }
     
     return result;
@@ -223,11 +225,13 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
         {
             _askDisconnection = YES;
             
-            [centralManager cancelPeripheralConnection:activePeripheral];
+            [centralManager cancelPeripheralConnection:_activePeripheral];
             
             ARSAL_Sem_Wait(&disconnectionSem);
 
-           [centralManager removeDelegate:self];
+            [centralManager removeDelegate:self];
+            
+            _askDisconnection = NO;
         }
     }
 
@@ -237,9 +241,9 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 - (BOOL)writeData:(NSData *)data toCharacteristic:(CBCharacteristic *)characteristic
 {
     BOOL result = NO;
-    if((self.activePeripheral != nil) && (characteristic != nil) && (data != nil))
+    if((_activePeripheral != nil) && (characteristic != nil) && (data != nil))
     {
-        [self.activePeripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithoutResponse];
+        [_activePeripheral writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithoutResponse];
         result = YES;
     }
 
@@ -258,7 +262,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     {
         ARSAL_Mutex_Lock(&readCharacteristicMutex);
         [mutableArray addObjectsFromArray:self.characteristicsNotifications];
-        [self.characteristicsNotifications removeAllObjects];
+        [_characteristicsNotifications removeAllObjects];
         ARSAL_Mutex_Unlock(&readCharacteristicMutex);
         result = YES;
     }
@@ -328,32 +332,35 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     NSLog(@"%s:%d : %@", __FUNCTION__, __LINE__, peripheral);
 #endif
     
-    if((self.activePeripheral != nil) && (self.activePeripheral == peripheral))
+    if((_activePeripheral != nil) && (_activePeripheral == peripheral))
     {
-        self.activePeripheral.delegate = nil;
-        self.activePeripheral = nil;
+        _activePeripheral.delegate = nil;
+        _activePeripheral = nil;
         
-        ARSAL_Sem_Post(&disconnectionSem);
-        
+        /* Post disconnectionSem only if the disconnect is asked */
+        if(_askDisconnection)
+        {
+            ARSAL_Sem_Post(&disconnectionSem);
+        }
         
         /* if activePeripheral is discovering services */
         if(_isDiscoveringServices)
         {
-            self.discoverServicesError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            _discoverServicesError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
             ARSAL_Sem_Post(&discoverServicesSem);
         }
         
         /* if activePeripheral is discovering Characteristics */
         if(_isDiscoveringCharacteristics)
         {
-            self.discoverCharacteristicsError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            _discoverCharacteristicsError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
             ARSAL_Sem_Post(&discoverCharacteristicsSem);
         }
         
         /* if activePeripheral is configuring Characteristics */
         if(_isConfiguringCharacteristics)
         {
-            self.configurationCharacteristicError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            _configurationCharacteristicError = ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
             ARSAL_Sem_Post(&configurationSem);
         }
         
@@ -365,7 +372,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
                 [_delegate onBLEDisconnect];
             }
         }
-        _askDisconnection = NO;
     }
 }
 
@@ -378,7 +384,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     
     if (error != nil)
     {
-        self.discoverServicesError = ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
+        _discoverServicesError = ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
     }
     
     ARSAL_Sem_Post(&discoverServicesSem);
@@ -392,7 +398,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     
     if (error != nil)
     {
-        self.discoverCharacteristicsError = ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING;
+        _discoverCharacteristicsError = ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING;
     }
     
     ARSAL_Sem_Post(&discoverCharacteristicsSem);
@@ -412,7 +418,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 #endif
 
     ARSAL_Mutex_Lock(&readCharacteristicMutex);
-    [self.characteristicsNotifications addObject:characteristic];
+    [_characteristicsNotifications addObject:characteristic];
     ARSAL_Mutex_Unlock(&readCharacteristicMutex);
 
     ARSAL_Sem_Post(&readCharacteristicsSem);
@@ -426,7 +432,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     
     if (error != nil)
     {
-        self.configurationCharacteristicError = ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
+        _configurationCharacteristicError = ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
     }
     
     ARSAL_Sem_Post(&configurationSem);
@@ -443,7 +449,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
 {
     /* post all Semaphore to unlock the all the functions */
 #if ARNETWORKAL_BLEMANAGER_ENABLE_DEBUG
-    NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__, peripheral);
+    NSLog(@"%s:%d -> %@", __FUNCTION__, __LINE__);
 #endif
     
     ARSAL_Sem_Post(&connectionSem);
