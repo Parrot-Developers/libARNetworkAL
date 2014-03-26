@@ -470,6 +470,27 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_New (ARNETWORKAL_Manager_t *manager)
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Cancel (ARNETWORKAL_Manager_t *manager)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    if(manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    if(error == ARNETWORKAL_OK)
+    {
+        ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
+        error = [network disconnect];
+        
+        /* reset the BLEManager for a new use */
+        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) reset];
+    }
+    
+    return error;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
@@ -485,8 +506,6 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
         error = [network disconnect];
         CFRelease(manager->senderObject);
         CFRelease(manager->receiverObject);
-        manager->senderObject = NULL;
-        manager->receiverObject = NULL;
         
         /* reset the BLEManager for a new use */
         [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) reset];

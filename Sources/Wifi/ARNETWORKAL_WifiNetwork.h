@@ -71,6 +71,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manager, const char *addr, int port);
 
 /**
+ * @brief Cancel the connect to wifi device.
+ * @param[in] manager pointer on the Manager
+ * @return error equal to ARNETWORKAL_OK if the cancel if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Cancel (ARNETWORKAL_Manager_t *manager);
+
+/**
  * @brief Bind the Receiver' socket in UDP to a port. the socket will be used to receive the data.
  * @param[in] manager address of the pointer on the Manager
  * @param[in] port port on which the data will be received.

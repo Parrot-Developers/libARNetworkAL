@@ -137,15 +137,39 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->maxBufferSize = ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE;
         manager->setOnDisconnectCallback = &ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback;
     }
+    else
+    {
+        ARNETWORKAL_WifiNetwork_Delete(manager);
+    }
 
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelWifiNetwork (ARNETWORKAL_Manager_t *manager)
+{
+    /* -- Cancel the initWifiNetwork -- */
+    
+    /* local declarations */
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        error = ARNETWORKAL_WifiNetwork_Cancel(manager);
+    }
+    
     return error;
 }
 
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork (ARNETWORKAL_Manager_t *manager)
 {
-    /** -- Close the Wifi Network -- */
+    /* -- Close the Wifi Network -- */
 
-    /** local declarations */
+    /* local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
     if(manager == NULL)
@@ -163,12 +187,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork (ARNETWORKAL_Manager_t *
 
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
 {
-    /** local declarations */
+    /* local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
 #if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
-    /** -- Initialize the BLE Network -- */
-    /** check parameters*/
+    /* -- Initialize the BLE Network -- */
+    /* check parameters*/
     if (manager == NULL)
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
@@ -197,11 +221,39 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
         manager->maxBufferSize = ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE;
         manager->setOnDisconnectCallback = ARNETWORKAL_BLENetwork_SetOnDisconnectCallback;
     }
+    else
+    {
+        ARNETWORKAL_BLENetwork_Delete(manager);
+    }
 
 #else
     error = ARNETWORKAL_ERROR_NETWORK_TYPE;
 #endif
 
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelBLENetwork (ARNETWORKAL_Manager_t *manager)
+{
+    /* Cancel initBLENetwork */
+    /* local declarations */
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+#if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
+    /* check parameters*/
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    if( error == ARNETWORKAL_OK)
+    {
+        error = ARNETWORKAL_BLENetwork_Cancel(manager);
+    }
+#else
+    error = ARNETWORKAL_ERROR_NETWORK_TYPE;
+#endif
+    
     return error;
 }
 

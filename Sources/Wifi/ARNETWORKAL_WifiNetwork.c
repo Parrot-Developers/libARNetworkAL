@@ -306,6 +306,20 @@ void *ARNETWORKAL_WifiNetwork_BandwidthThread (void *param)
     return (void *)0;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Cancel (ARNETWORKAL_Manager_t *manager)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    if(manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    /* do nothink : wifi connection is not blocking */
+    
+    return error;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manager)
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
@@ -320,7 +334,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
         if (manager->senderObject)
         {
             ARNETWORKAL_WifiNetworkObject *sender = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
-            ARSAL_Socket_Close(sender->socket);
+            
+            if (sender->socket != -1)
+            {
+                ARSAL_Socket_Close(sender->socket);
+                sender->socket = -1;
+            }
 
             close (sender->fifo[0]);
             close (sender->fifo[1]);
@@ -343,7 +362,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Delete (ARNETWORKAL_Manager_t *manage
         if(manager->receiverObject)
         {
             ARNETWORKAL_WifiNetworkObject *reader = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
-            ARSAL_Socket_Close(reader->socket);
+            
+            if (reader->socket != -1)
+            {
+                ARSAL_Socket_Close(reader->socket);
+                reader->socket = -1;
+            }
 
             close (reader->fifo[0]);
             close (reader->fifo[1]);

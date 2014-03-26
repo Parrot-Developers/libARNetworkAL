@@ -98,6 +98,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
 
 /**
+ * @brief Cancel the Connect to a BLE device.
+ * @param[in] manager address of the pointer on the Manager
+ * @return error equal to ARNETWORKAL_OK if the cancel if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Cancel (ARNETWORKAL_Manager_t *manager);
+
+/**
  * @brief set the OnDisconnect Callback
  * @param manager pointer on the Manager
  * @param onDisconnectCallbak function called on disconnect

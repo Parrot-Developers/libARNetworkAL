@@ -220,6 +220,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_Unlock (ARNETWORKAL_Manager_t *manager);
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork(ARNETWORKAL_Manager_t *manager, const char *addr, int sendingPort, int receivingPort, int recvTimeoutSec);
 
 /**
+ * @brief Cancel the initialization Wifi network.
+ * @param manager pointer on the Manager
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful Canceled otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelWifiNetwork (ARNETWORKAL_Manager_t *manager);
+
+/**
  * @brief close Wifi network.
  * @param manager pointer on the Manager
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
@@ -235,6 +242,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork(ARNETWORKAL_Manager_t *m
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
+
+/**
+ * @brief Cancel the initialization BLE network.
+ * @param manager pointer on the Manager.
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful Canceled otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelBLENetwork (ARNETWORKAL_Manager_t *manager);
 
 /**
  * @brief close BLE network.
