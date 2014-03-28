@@ -81,7 +81,7 @@
         _array = [[NSMutableArray alloc] init];
         _bw_elementsUp = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
         _bw_elementsDown = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
-        ARSAL_Sem_Init (&_bw_threadRunning, 0, 0);
+        ARSAL_Sem_Init (&_bw_threadRunning, 0, 1);
     }
     return self;
 }
@@ -182,7 +182,6 @@
             _bw_elementsDown[i] = 0;
         }
         ARSAL_Sem_Init (&_bw_sem, 0, 0);
-        ARSAL_Sem_Post (&_bw_threadRunning);
 
         _centralManager = centralManager;
         _peripheral = peripheral;
@@ -229,9 +228,9 @@
 - (eARNETWORKAL_ERROR)disconnect
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-
+    
     ARSAL_Sem_Post (&_bw_sem);
-    ARSAL_Sem_Wait (&_bw_threadRunning);
+    ARSAL_Sem_Wait(&_bw_threadRunning);
     ARSAL_Sem_Destroy (&_bw_sem);
 
     if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager])
@@ -398,31 +397,33 @@
 
 - (void)bw_thread
 {
-    ARSAL_Sem_Wait (&_bw_threadRunning);
-
-    const struct timespec timeout = {
-        .tv_sec = ARNETWORKAL_BW_PROGRESS_EACH_SEC,
-        .tv_nsec = 0,
-    };
-
-    int waitRes = ARSAL_Sem_Timedwait (&_bw_sem, &timeout);
-    int loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
-    while (loopCondition)
+    
+    if (ARSAL_Sem_Trywait(&_bw_threadRunning) == 0)
     {
-        _bw_index++;
-        _bw_index %= ARNETWORKAL_BW_NB_ELEMS;
-        _bw_elementsUp[_bw_index] = _bw_currentUp;
-        _bw_elementsDown[_bw_index] = _bw_currentDown;
-        _bw_currentUp = 0;
-        _bw_currentDown = 0;
+        const struct timespec timeout = {
+            .tv_sec = ARNETWORKAL_BW_PROGRESS_EACH_SEC,
+            .tv_nsec = 0,
+        };
 
-        // Update loop condition
-        waitRes = ARSAL_Sem_Timedwait (&_bw_sem, &timeout);
-        loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+        int waitRes = ARSAL_Sem_Timedwait (&_bw_sem, &timeout);
+        int loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+        while (loopCondition)
+        {
+            _bw_index++;
+            _bw_index %= ARNETWORKAL_BW_NB_ELEMS;
+            _bw_elementsUp[_bw_index] = _bw_currentUp;
+            _bw_elementsDown[_bw_index] = _bw_currentDown;
+            _bw_currentUp = 0;
+            _bw_currentDown = 0;
+
+            // Update loop condition
+            waitRes = ARSAL_Sem_Timedwait (&_bw_sem, &timeout);
+            loopCondition = (waitRes == -1) && (errno == ETIMEDOUT);
+        }
+        
+        ARSAL_Sem_Post(&_bw_threadRunning);
     }
-
-    ARSAL_Sem_Post (&_bw_threadRunning);
-    ARSAL_Sem_Post (&_bw_threadRunning);
+    /* No Else: the thread is already running or stopped*/
 }
 
 
