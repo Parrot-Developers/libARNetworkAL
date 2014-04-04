@@ -44,7 +44,7 @@
 DECLARE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager);
 
 - (eARNETWORKAL_ERROR)connectToPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager;
-- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager;
+- (void)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager;
 - (eARNETWORKAL_ERROR)discoverNetworkServices:(NSArray *)servicesUUIDs;
 - (eARNETWORKAL_ERROR)discoverNetworkCharacteristics:(NSArray *)characteristicsUUIDs forService:(CBService *)service;
 - (eARNETWORKAL_ERROR)setNotificationCharacteristic:(CBCharacteristic *)characteristic;

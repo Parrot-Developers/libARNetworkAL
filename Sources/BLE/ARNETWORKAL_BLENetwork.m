@@ -31,6 +31,7 @@
  *             private header:
  *
  *****************************************/
+
 @interface ARNETWORKAL_BLENetwork : NSObject <ARNetworkBLEManagerDelegate>
 
 @property (nonatomic, strong) CBPeripheral *peripheral;
@@ -81,7 +82,8 @@
         _array = [[NSMutableArray alloc] init];
         _bw_elementsUp = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
         _bw_elementsDown = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
-        ARSAL_Sem_Init (&_bw_threadRunning, 0, 1);
+        ARSAL_Sem_Init (&_bw_threadRunning, 0, 0);
+        ARSAL_Sem_Init (&_bw_sem, 0, 0);
     }
     return self;
 }
@@ -90,6 +92,7 @@
 {
     free (_bw_elementsUp);
     free (_bw_elementsDown);
+    ARSAL_Sem_Destroy (&_bw_sem);
     ARSAL_Sem_Destroy (&_bw_threadRunning);
 }
 
@@ -181,7 +184,7 @@
             _bw_elementsUp[i] = 0;
             _bw_elementsDown[i] = 0;
         }
-        ARSAL_Sem_Init (&_bw_sem, 0, 0);
+        ARSAL_Sem_Post(&_bw_threadRunning);
 
         _centralManager = centralManager;
         _peripheral = peripheral;
@@ -229,17 +232,19 @@
 {
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
     
-    ARSAL_Sem_Post (&_bw_sem);
-    ARSAL_Sem_Wait(&_bw_threadRunning);
-    ARSAL_Sem_Destroy (&_bw_sem);
-
-    if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager])
+    @synchronized (self)
     {
-        error = ARNETWORKAL_ERROR_BLE_DISCONNECTION;
+        if (_peripheral != nil)
+        {
+            ARSAL_Sem_Post (&_bw_sem);
+            ARSAL_Sem_Wait(&_bw_threadRunning);
+
+            [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager];
+
+            _peripheral = nil;
+            [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setDelegate:nil];
+        }
     }
-    
-    [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setDelegate:nil];
-    
     return error;
 }
 

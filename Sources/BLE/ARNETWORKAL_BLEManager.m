@@ -217,7 +217,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
     return result;
 }
 
-- (BOOL)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager
+- (void)disconnectPeripheral:(CBPeripheral *)peripheral withCentralManager:(ARSAL_CentralManager *)centralManager
 {
     @synchronized (self)
     {
@@ -234,8 +234,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager, ARNETWORKAL_BLEManager_In
             _askDisconnection = NO;
         }
     }
-
-    return (self.activePeripheral == nil);
 }
 
 - (BOOL)writeData:(NSData *)data toCharacteristic:(CBCharacteristic *)characteristic
