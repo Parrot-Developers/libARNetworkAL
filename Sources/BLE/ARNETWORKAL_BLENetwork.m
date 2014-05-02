@@ -19,7 +19,6 @@
 #import "ARNETWORKAL_BLEManager.h"
 
 #define ARNETWORKAL_BLENETWORK_TAG                      "ARNETWORKAL_BLENetwork"
-#define ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE      ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE
 
 #define ARNETWORKAL_BW_PROGRESS_EACH_SEC 1
 #define ARNETWORKAL_BW_NB_ELEMS 10
@@ -253,7 +252,7 @@
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
     // first uint8_t is frame type and second uint8_t is sequence number
-    if((frame->size - offsetof(ARNETWORKAL_Frame_t, dataPtr) + (2 * sizeof(uint8_t))) > ARNETWORKAL_BLENETWORK_SENDING_BUFFER_SIZE)
+    if((frame->size - offsetof(ARNETWORKAL_Frame_t, dataPtr) + ARNETWORKAL_BLENETWORK_HEADER_SIZE ) > ARNETWORKAL_BLENETWORK_MEDIA_MTU)
     {
         result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
     }
