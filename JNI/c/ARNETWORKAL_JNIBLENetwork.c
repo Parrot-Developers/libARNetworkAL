@@ -33,7 +33,8 @@
 
 extern JavaVM *ARNETWORKAL_JNIManager_VM; /** reference to the java virtual machine */
  
-static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT; 
+static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT;
+static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_CANCEL;
 static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_DISCONNECT; 
 static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME;
 static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_POP_FRAME;
@@ -50,9 +51,12 @@ static jmethodID ARNETWORKAL_JNIBLENETWORK_METHOD_DATA_POP_GET_RESULT;
  */
 typedef struct
 {
-    jobject jBLENetwork; /**< java network manager */
+    jobject jBLENetwork; /**< java BLENetwork manager */
+    ARNETWORKAL_Manager_t *manager; /**< NetworkAL manager */
     jbyteArray currentFrameByteArray; /**< Byte Array storing the currentFrame */
     uint8_t* currentFrame; /**< currentFrame to store the data pop */
+    ARNETWORKAL_Manager_OnDisconnect_t onDisconnect; /**< function called on disconnect */
+    void *onDisconnectCustomData; /**< custom data sent to the onDisconnect */
 } ARNETWORKAL_JNIBLENETWORK_Object_t;
 
 /**
@@ -60,11 +64,12 @@ typedef struct
  * @warning This function allocate memory
  * @post ARNETWORKAL_JNIBLENETWORK_ObjectDelete() must be called to delete the BLE network and free the memory allocated.
  * @param env java environement
- * @param[in] error eARNETWORKAL_ERROR
+ * @param[in] manager the networkAL Manager
+ * @param[out] error eARNETWORKAL_ERROR
  * @return the new ARNETWORKAL_JNIBLENETWORK
  * @see ARNETWORKAL_JNIBLENETWORK_ObjectDelete()
  */
-ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, eARNETWORKAL_ERROR *error);
+ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, ARNETWORKAL_Manager_t *manager, eARNETWORKAL_ERROR *error);
 
 /**
  * @brief Delete the ARNETWORKAL_JNIBLENETWORK_Object_t
@@ -96,10 +101,10 @@ void ARNETWORKAL_JNIBLENetwork_ObjectDeleteCurrentFrame (JNIEnv *env, ARNETWORKA
  *
  *****************************************/
 
-ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, eARNETWORKAL_ERROR *error)
+ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, ARNETWORKAL_Manager_t *manager, eARNETWORKAL_ERROR *error)
 {
     /* -- Create a new sender -- */
-
+    
     /* local declarations */
     ARNETWORKAL_JNIBLENETWORK_Object_t* jniBLENetwork =  NULL;
     eARNETWORKAL_ERROR localError = ARNETWORKAL_OK;
@@ -120,10 +125,10 @@ ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv 
     {
         /* get jBLENetwork */
         jBLENetworkCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork");
-        jmethodID jBLENnetworkMethodConstructor = (*env)->GetMethodID(env, jBLENetworkCls, "<init>", "()V");
+        jmethodID jBLENnetworkMethodConstructor = (*env)->GetMethodID(env, jBLENetworkCls, "<init>", "(I)V");
         
         /* create jBLENetwork */
-        jBLENetwork = (*env)->NewObject(env, jBLENetworkCls, jBLENnetworkMethodConstructor);
+        jBLENetwork = (*env)->NewObject(env, jBLENetworkCls, jBLENnetworkMethodConstructor, jniBLENetwork);
         
         /* free jBLENetworkCls */
         (*env)->DeleteLocalRef (env, jBLENetworkCls );
@@ -143,7 +148,10 @@ ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv 
     if (localError == ARNETWORKAL_OK)
     {
         jniBLENetwork->currentFrame = NULL;
+        jniBLENetwork->manager = manager;
         jniBLENetwork->currentFrameByteArray = NULL;
+        jniBLENetwork->onDisconnect = NULL;
+        jniBLENetwork->onDisconnectCustomData = NULL;
     }
     
     /* delete the jniBLENetwork if an error occurred */
@@ -169,8 +177,6 @@ void ARNETWORKAL_JNIBLENetwork_ObjectDelete (JNIEnv *env, ARNETWORKAL_JNIBLENETW
 {
     /* -- Delete the jniBLENetwork -- */
     
-    ARSAL_PRINT (ARSAL_PRINT_WARNING, ARNETWORKAL_JNIBLENETWORK_TAG, "JNIBLENetwork_Delete");
-    
     if (jniBLENetwork != NULL)
     {
         if (*jniBLENetwork != NULL)
@@ -188,6 +194,7 @@ void ARNETWORKAL_JNIBLENetwork_ObjectDelete (JNIEnv *env, ARNETWORKAL_JNIBLENETW
             *jniBLENetwork = NULL;
         }
     }
+    
 }
 
 void ARNETWORKAL_JNIBLENetwork_ObjectStoreCurrentFrame (JNIEnv *env, ARNETWORKAL_JNIBLENETWORK_Object_t *jniBLENetwork, jbyteArray currentFrameByteArray)
@@ -219,23 +226,37 @@ void ARNETWORKAL_JNIBLENetwork_ObjectDeleteCurrentFrame (JNIEnv *env, ARNETWORKA
     }
 }
 
+JNIEXPORT int JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeGetMediaMTU(JNIEnv *env, jobject obj)
+{
+    /* get ARNETWORKAL_JNIBLENETWORK_MEDIA_MTU*/
+    
+    return ARNETWORKAL_JNIBLENETWORK_MEDIA_MTU;
+}
+
+JNIEXPORT int JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeGetHeaderSize(JNIEnv *env, jobject obj)
+{
+    /* get ARNETWORKAL_JNIBLENETWORK_HEADER_SIZE*/
+    
+    return ARNETWORKAL_JNIBLENETWORK_HEADER_SIZE;
+}
+
 JNIEXPORT void JNICALL
 Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIInit(JNIEnv *env, jobject obj)
 {
     /* -- initialize the JNI part -- */
     /* load the references of java methods */
     
-    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIBLENETWORK_TAG, " ARNetworkALManager_nativeJNIInit ");
-    
     jclass jBLENetworkCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork");
     
     ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Lcom/parrot/arsdk/arnetworkal/ARNetworkALBLEManager;Landroid/bluetooth/BluetoothDevice;[I)I");
+    ARNETWORKAL_JNIBLENETWORK_METHOD_CANCEL = (*env)->GetMethodID(env, jBLENetworkCls, "cancel", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_DISCONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "disconnect", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME = (*env)->GetMethodID(env, jBLENetworkCls, "pushFrame", "(IIII[B)I");
     ARNETWORKAL_JNIBLENETWORK_METHOD_POP_FRAME = (*env)->GetMethodID(env, jBLENetworkCls, "popFrame", "()Lcom/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork$DataPop;");
     ARNETWORKAL_JNIBLENETWORK_METHOD_RECEIVE = (*env)->GetMethodID(env, jBLENetworkCls, "receive", "()I");
     ARNETWORKAL_JNIBLENETWORK_METHOD_UNLOCK = (*env)->GetMethodID(env, jBLENetworkCls, "unlock", "()V");
-    
     
     jclass jDataPopCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork$DataPop");
     
@@ -248,11 +269,23 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIInit(JNIEnv *en
     (*env)->DeleteLocalRef (env, jDataPopCls);
 }
 
+JNIEXPORT void JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIOnDisconect(JNIEnv *env, jobject obj, jint jniARNetworkALBLENetwork)
+{
+    /* -- onDisconect callback -- */
+    
+    /* local declarations */
+    ARNETWORKAL_JNIBLENETWORK_Object_t *jniBLENetwork = (ARNETWORKAL_JNIBLENETWORK_Object_t *) jniARNetworkALBLENetwork;
+    
+    if ((jniBLENetwork != NULL) && (jniBLENetwork->onDisconnect != NULL))
+    {
+        jniBLENetwork->onDisconnect (jniBLENetwork->manager, jniBLENetwork->onDisconnectCustomData);
+    }
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager)
 {
     /* -- create a new BLEnetwork -- */
-    
-    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIBLENETWORK_TAG, " BLENetwork_New ");
     
     /* local declarations */
     JNIEnv *env = NULL;
@@ -290,7 +323,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager
     /* create the jniBLENetwork */
     if (error == ARNETWORKAL_OK)
     {
-        jniBLENetwork = ARNETWORKAL_JNIBLENetwork_ObjectNew (env, &error);
+        jniBLENetwork = ARNETWORKAL_JNIBLENetwork_ObjectNew (env, manager, &error);
     }
     
     if (error == ARNETWORKAL_OK)
@@ -400,12 +433,12 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_JNIBLENetwork_PushFrame (ARNETWORKAL_Man
     {
         /* create dataByteArray */
         dataSize = frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
-        dataByteArray = (*env)->NewByteArray(env, frame->size);
+        dataByteArray = (*env)->NewByteArray(env, dataSize);
         (*env)->SetByteArrayRegion(env, dataByteArray, 0, dataSize, (jbyte*)frame->dataPtr);
         
         /* check frame->size */
         /* first uint8_t is frame type and second uint8_t is sequence number */
-        if ((frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr) + (2 * sizeof(uint8_t))) > ARNETWORKAL_JNIBLENETWORK_SENDING_BUFFER_SIZE)
+        if ((frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr) + ARNETWORKAL_JNIBLENETWORK_HEADER_SIZE) > ARNETWORKAL_JNIBLENETWORK_MEDIA_MTU)
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
@@ -414,7 +447,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_JNIBLENetwork_PushFrame (ARNETWORKAL_Man
     if (result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
         /* java BLE push */
-        result = (*env)->CallIntMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME, (jint) frame->type, (jint) frame->id, (jint) frame->seq, (jint) frame->size, dataByteArray);
+        result = (*env)->CallIntMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME, (jint) frame->type, (jint) frame->id, (jint) frame->seq, (jint) dataSize, dataByteArray);
     }
     
     /* cleanup*/
@@ -556,8 +589,6 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_JNIBLENetwork_Receive(ARNETWORKAL_Manage
 {
     /* -- BLE Receive -- */
     
-    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIBLENETWORK_TAG, " BLENetwork_Receive ");
-    
     /* local declarations */
     JNIEnv *env = NULL;
     jint getEnvResult = JNI_OK;
@@ -640,11 +671,52 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Unlock(ARNETWORKAL_Manager_t *manag
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_SetOnDisconnectCallback (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData)
+{
+    /* -- set the OnDisconnect Callback -- */
+    
+    /* local declarations */
+    JNIEnv *env = NULL;
+    jint getEnvResult = JNI_OK;
+    ARNETWORKAL_JNIBLENETWORK_Object_t *jniBLENetwork = (ARNETWORKAL_JNIBLENETWORK_Object_t *) manager->receiverObject;
+    jobject jBLENetwork = jniBLENetwork->jBLENetwork;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    /* get the environment */
+    if (ARNETWORKAL_JNIManager_VM != NULL)
+    {
+        getEnvResult = (*ARNETWORKAL_JNIManager_VM)->GetEnv(ARNETWORKAL_JNIManager_VM, (void **) &env, JNI_VERSION_1_6);
+    }
+    /* if no environment then attach the thread to the virtual machine */
+    if (getEnvResult == JNI_EDETACHED)
+    {
+        ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIBLENETWORK_TAG, "attach the thread to the virtual machine ...");
+        (*ARNETWORKAL_JNIManager_VM)->AttachCurrentThread(ARNETWORKAL_JNIManager_VM, &env, NULL);
+    }
+    /* check the environment  */
+    if (env != NULL)
+    {
+        /* java BLE Set OnDisconnectCallback */
+        jniBLENetwork->onDisconnect = onDisconnectCallback;
+        jniBLENetwork->onDisconnectCustomData = customData;
+    }
+    else
+    {
+        error = ARNETWORKAL_ERROR;
+    }
+    
+    /* if the thread has been attached then detach the thread from the virtual machine */
+    if ((getEnvResult == JNI_EDETACHED) && (env != NULL))
+    {
+        (*ARNETWORKAL_JNIManager_VM)->DetachCurrentThread(ARNETWORKAL_JNIManager_VM);
+    }
+    
+    return error;
+}
+
 eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, jintArray notificationIDArray)
 {
     /* -- connect the BLE network -- */
-    
-    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIBLENETWORK_TAG, " BLENetwork_Connect ");
     
     /* local declarations */
     JNIEnv *env = NULL;
@@ -686,4 +758,61 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *man
     }
     
     return result;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Cancel (ARNETWORKAL_Manager_t *manager)
+{
+    /* -- cancel the BLEnetwork connection -- */
+    
+    ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_JNIBLENETWORK_TAG, " BLENetwork_Cancel ");
+    
+    /* local declarations */
+    JNIEnv *env = NULL;
+    jint getEnvResult = JNI_OK;
+    ARNETWORKAL_JNIBLENETWORK_Object_t *jniBLENetwork = NULL;
+    jobject jBLENetwork = NULL;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    
+    /* Check parameters */
+    if(manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    
+    if(error == ARNETWORKAL_OK)
+    {
+        /* get the environment */
+        if (ARNETWORKAL_JNIManager_VM != NULL)
+        {
+            getEnvResult = (*ARNETWORKAL_JNIManager_VM)->GetEnv(ARNETWORKAL_JNIManager_VM, (void **) &env, JNI_VERSION_1_6);
+        }
+        /* if no environment then attach the thread to the virtual machine */
+        if (getEnvResult == JNI_EDETACHED)
+        {
+            ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIBLENETWORK_TAG, "attach the thread to the virtual machine ...");
+            (*ARNETWORKAL_JNIManager_VM)->AttachCurrentThread(ARNETWORKAL_JNIManager_VM, &env, NULL);
+        }
+        /* check the environment  */
+        if (env == NULL)
+        {
+            error = ARNETWORKAL_ERROR;
+        }
+    }
+    
+    if(error == ARNETWORKAL_OK)
+    {
+        /* cancel jniBLENetwork connection */
+        
+        jniBLENetwork = (ARNETWORKAL_JNIBLENETWORK_Object_t *) manager->senderObject;
+        jobject jBLENetwork = jniBLENetwork->jBLENetwork;
+        (*env)->CallVoidMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_CANCEL);
+    }
+    
+    /* if the thread has been attached then detach the thread from the virtual machine */
+    if ((getEnvResult == JNI_EDETACHED) && (env != NULL))
+    {
+        (*ARNETWORKAL_JNIManager_VM)->DetachCurrentThread(ARNETWORKAL_JNIManager_VM);
+    }
+    
+    return error;
 }

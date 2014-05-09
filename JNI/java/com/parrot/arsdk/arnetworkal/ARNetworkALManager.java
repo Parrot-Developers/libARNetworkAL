@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
+import com.parrot.arsdk.arsal.ARSALPrint;
+
 /**
  * Network manager allow to send and receive on network.
  */
@@ -28,6 +30,7 @@ public class ARNetworkALManager
     
     private native int nativeInitBLENetwork(long jManager, Object jdeviceManager, BluetoothDevice jdevice, int recvTimeoutSec, int[] notificationIDArray);
     private native int nativeCloseBLENetwork(long jManager);
+    private native int nativeCancelBLENetwork(long jManager);
 
     private long m_managerPtr;
     private boolean m_initOk;
@@ -167,6 +170,28 @@ public class ARNetworkALManager
             /* init the ARNetworkALBLEManager */
             int intError = nativeInitBLENetwork(m_managerPtr, bleManager, device, recvTimeoutSec, notificationIDArray);
             error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        }
+        
+        return error;
+    }
+    
+    /**
+     * cancel BLE network connection
+     */
+    public ARNETWORKAL_ERROR_ENUM cancelBLENetwork()
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+        
+        if(m_initOk == true)
+        {
+            error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        }
+        
+        if (error == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
+        {
+            /* close the ARNetworkALBLEManager */
+            int intError = nativeCancelBLENetwork(m_managerPtr);
+            error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
         
         return error;

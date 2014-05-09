@@ -21,11 +21,11 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import com.parrot.arsdk.arsal.ARSALPrint;
 
 @TargetApi(18)
 public class ARNetworkALBLEManager
@@ -34,46 +34,68 @@ public class ARNetworkALBLEManager
     
     private static final UUID ARNETWORKALBLEMANAGER_CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     
+    private static final int ARNETWORKAL_BLEMANAGER_CONNECTION_TIMEOUT_SEC  = 5;
+    
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics;
     
     private Context context;
     private BluetoothDevice deviceBLEService;
-    private BluetoothGatt gatt;
+    private BluetoothGatt activeGatt;
     
-    boolean gattConnected = false;
+    private ARNetworkALBLEManagerListener listener;
+    
+    //boolean gattConnected = false;
     
     private List<BluetoothGattCharacteristic> characteristicNotifications;
     
-    private Semaphore connectSem;
-    private Semaphore disconnectSem;
-    private Semaphore configurationSem;
+    private Semaphore connectionSem;
+    private Semaphore disconnectionSem;
+    private Semaphore discoverServicesSem;
+    private Semaphore discoverCharacteristicsSem;
     private Semaphore readCharacteristicSem;
+    private Semaphore configurationSem;
     
     private Lock readCharacteristicMutex;
     
-    private int configurationStatus;
+    private ARNETWORKAL_ERROR_ENUM discoverServicesError;
+    private ARNETWORKAL_ERROR_ENUM discoverCharacteristicsError;
+    private ARNETWORKAL_ERROR_ENUM configurationCharacteristicError;
     
+    private boolean askDisconnection;
+    private boolean isDiscoveringServices;
+    private boolean isDiscoveringCharacteristics;
+    private boolean isConfiguringCharacteristics;
     
     /**
      * Constructor
      */
     public ARNetworkALBLEManager (Context context)
     {
-        Log.i(TAG, "new ARNetworkALBLEManager ");
-        
         this.context = context;
         this.deviceBLEService =  null;
-        this.gatt = null;
+        this.activeGatt = null;
         
         characteristicNotifications = new ArrayList<BluetoothGattCharacteristic> ();
         
-        connectSem = new Semaphore (0);
-        disconnectSem = new Semaphore (0);
-        configurationSem = new Semaphore (0);
+        listener = null;
+        
+        connectionSem = new Semaphore (0);
+        disconnectionSem = new Semaphore (0);
+        discoverServicesSem = new Semaphore (0);
+        discoverCharacteristicsSem = new Semaphore (0);
         readCharacteristicSem = new Semaphore (0);
+        configurationSem = new Semaphore (0);
+
+        askDisconnection = false;
+        isDiscoveringServices = false;
+        isDiscoveringCharacteristics = false;
+        isConfiguringCharacteristics = false;
+        
+        discoverServicesError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+        discoverCharacteristicsError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+        configurationCharacteristicError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
         
         readCharacteristicMutex = new ReentrantLock ();
-        
     }
     
     /**
@@ -92,69 +114,128 @@ public class ARNetworkALBLEManager
     }
     
     @TargetApi(18)
-    public boolean connect (BluetoothDevice deviceBLEService)
+    public ARNETWORKAL_ERROR_ENUM connect (BluetoothDevice deviceBLEService)
     {
-        Log.d(TAG, "connect ");
-        
-        /* if there is an active gatt, disconnecting it */
-        if (this.gatt != null) 
+        ARNETWORKAL_ERROR_ENUM result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+        synchronized (this)
         {
-            disconnect();
+            /* if there is an active activeGatt, disconnecting it */
+            if (activeGatt != null) 
+            {
+                disconnect();
+            }
+            
+            /* connection to the new activeGatt */
+            this.deviceBLEService = deviceBLEService;
+            /*this.activeGatt = */deviceBLEService.connectGatt (context, false, gattCallback);
+            
+            /* wait the connect semaphore*/
+            try
+            {
+                connectionSem.tryAcquire (ARNETWORKAL_BLEMANAGER_CONNECTION_TIMEOUT_SEC, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+            
+            if (activeGatt != null)
+            {
+                // TODO see
+            }
+            else
+            {
+                /* Connection failed */
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
+            }
         }
         
-        this.deviceBLEService = deviceBLEService;
-        this.gatt = deviceBLEService.connectGatt (context, false, gattCallback);
-        
-        //Log.d(TAG, "wait connect semaphore" );
-        /* wait the connect semaphore*/
-        try
-        {
-            connectSem.acquire ();
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-        }
-        
-        /* return false if the gatt is null*/
-        return (this.gatt != null);
+        return result;
     }
     
     public void disconnect ()
     {
-        Log.i(TAG, "disconnect");
-        if (gatt != null)
+        synchronized (this)
         {
-            if (gattConnected == true)
+            ARSALPrint.d(TAG, "disconnect ...");
+            if (activeGatt != null)
             {
-                /* Disconnect the get if the connection is successful */
-                Log.i(TAG, "the gatt is Connected ... disconnect it");
+                askDisconnection = true;
                 
-                gatt.disconnect();
+                activeGatt.disconnect();
                 
-                Log.i(TAG, "wait the disconnect Semaphore");
+                ARSALPrint.d(TAG, "wait the disconnect Semaphore");
                 
                 /* wait the disconnect Semaphore*/
                 try
                 {
-                    disconnectSem.acquire ();
+                    disconnectionSem.acquire ();
                 }
                 catch (InterruptedException e)
                 {
                     e.printStackTrace();
                 }
+                
+                //TODO see removeListener
+                
+                askDisconnection = false;
+                
             }
-            
-            Log.i(TAG, "gatt.close() ... ");
-            gatt.close();
-            gatt = null;
-            
         }
+    }
+    
+    public ARNETWORKAL_ERROR_ENUM discoverBLENetworkServices ()
+    {
+        ARNETWORKAL_ERROR_ENUM result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+        synchronized (this)
+        {
+            /* If there is an active Gatt, disconnect it */
+            if (activeGatt != null)
+            {
+                isDiscoveringServices = true;
+                discoverServicesError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+                
+                /* run the discovery of the activeGatt services */
+                boolean discoveryRes = activeGatt.discoverServices();
+                
+                if (discoveryRes)
+                {
+                    /* wait the discoverServices semaphore*/
+                    try
+                    {
+                        discoverServicesSem.acquire ();
+                        result = discoverServicesError;
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                        result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+                    }
+                }
+                else
+                {
+                    result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+                }
+                
+                isDiscoveringServices = false;
+            }
+            else
+            {
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+            }
+        }
+        
+        return result;
     }
     
     public BluetoothGatt getGatt ()
     {
-        return gatt;
+        return activeGatt;
+    }
+    
+    public void setListener(ARNetworkALBLEManagerListener listener)
+    {
+        this.listener = listener;
     }
     
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback()
@@ -162,27 +243,61 @@ public class ARNetworkALBLEManager
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState)
         {
-            //Log.d(TAG, "BLE onConnectionStateChange");
-            
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED)
             {
-                //Log.d(TAG, "Connected to GATT server.");
+                ARSALPrint.d(TAG, "Connected to GATT server.");
                 
-                /* discover the gatt services */
-                discoverBLENetworkServices (gatt);
+                activeGatt = gatt;
                 
-                gattConnected = true;
+                /* post a connect Semaphore */
+                connectionSem.release();
             }
             else if (newState == BluetoothProfile.STATE_DISCONNECTED)
             {
-                Log.d(TAG, "gatt disconnected" );
-                
-                //Log.d(TAG, "post a disconnect Semaphore" );
-                /* post a disconnect Semaphore */
-                disconnectSem.release();
-                
-                gattConnected = false;
+                if ((activeGatt != null) && (activeGatt == activeGatt))
+                {
+                    ARSALPrint.d(TAG, "activeGatt disconnected" );
+                    
+                    activeGatt.close();
+                    activeGatt = null;
+                    
+                    /* Post disconnectionSem only if the disconnect is asked */
+                    if (askDisconnection)
+                    {
+                        disconnectionSem.release();
+                    }
+                    
+                    /* if activePeripheral is discovering services */
+                    if (isDiscoveringServices)
+                    {
+                        discoverServicesError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+                        discoverServicesSem.release();
+                    }
+                    
+                    /* if activePeripheral is discovering Characteristics */
+                    if (isDiscoveringCharacteristics)
+                    {
+                        discoverCharacteristicsError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+                        discoverCharacteristicsSem.release();
+                    }
+                    
+                    /* if activePeripheral is configuring Characteristics */
+                    if (isConfiguringCharacteristics)
+                    {
+                        configurationCharacteristicError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
+                        configurationSem.release();
+                    }
+                    
+                    /* Notify listener */
+                    if (!askDisconnection)
+                    {
+                        if (listener != null)
+                        {
+                            listener.onBLEDisconnect();
+                        }
+                    }
+                }
             }
         }
         
@@ -190,50 +305,37 @@ public class ARNetworkALBLEManager
         // New services discovered
         public void onServicesDiscovered (BluetoothGatt gatt, int status)
         {
-            //Log.d(TAG, "onServicesDiscovered");
-            
-            if (status == BluetoothGatt.GATT_SUCCESS)
+            if (status != BluetoothGatt.GATT_SUCCESS)
             {
-                //Log.d(TAG, "number of servies: "+ gatt.getServices().size());
-            }
-            else
-            {
-                Log.e(TAG, "servicesDiscovered status: " + status);
-                /* if the discovery is not successes */
-                
-                /* disconnect the gatt */
-                disconnect ();
+                /* the discovery is not successes */
+                discoverServicesError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
             }
             
-            //Log.d(TAG, "post a connect Semaphore" );
-            /* post a connectSem */
-            connectSem.release();
-            
+            discoverServicesSem.release();
         }
         
         @Override
         /* Result of a characteristic read operation */
         public void onCharacteristicRead (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
         {
-            //Log.d(TAG, "onCharacteristicRead");
+            //Do Nothing
         }
         
         @Override
         public void onDescriptorRead (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status)
         {
-            //Log.d(TAG, "onDescriptorRead");
+            //Do Nothing
         }
         
         @Override
         public void onDescriptorWrite (BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status)
         {
-            Log.d(TAG, "onDescriptorWrite");
-            Log.d(TAG, "status: " + status);
+            /* check the status */
+            if (status != BluetoothGatt.GATT_SUCCESS)
+            {
+                configurationCharacteristicError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
+            }
             
-            /* write the configurationStatus */
-            configurationStatus = status;
-            
-            Log.d(TAG, "post a configuration Semaphore" );
             /* post a configuration Semaphore */
             configurationSem.release();
         }
@@ -242,94 +344,66 @@ public class ARNetworkALBLEManager
         /* Characteristic notification */
         public void onCharacteristicChanged (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic)
         {
-            Log.d(TAG, "BLE onCharacteristicChanged");
-            //Log.d(TAG, "characteristic.getUuid(): " + characteristic.getUuid());
-            
             readCharacteristicMutex.lock();
             characteristicNotifications.add(characteristic);
             readCharacteristicMutex.unlock();
             
-            //Log.d(TAG, "post a readCharacteristic Semaphore" );
             /* post a readCharacteristic Semaphore */
             readCharacteristicSem.release();
-            
         }
-        
-        private void discoverBLENetworkServices (BluetoothGatt gatt)
-        {
-            //Log.d(TAG, "BLE discoverBLENetworkServices" );
-            
-            boolean discoveryRes = false;
-            
-            /* run the discovery of the gatt services */
-            discoveryRes = gatt.discoverServices();
-            
-            if (discoveryRes == false)
-            {
-                /* the gatt discovering is not running */
-                
-                /* disconnect the gatt */
-                disconnect ();
-                
-                /* stop the connecting process */
-                //Log.d(TAG, "post a connect Semaphore" );
-                /* post a connectSem */
-                connectSem.release();
-            }
-        }
-        
     };
     
-    public boolean setCharacteristicNotification (BluetoothGattService service, BluetoothGattCharacteristic characteristic)
+    public ARNETWORKAL_ERROR_ENUM setCharacteristicNotification (BluetoothGattService service, BluetoothGattCharacteristic characteristic)
     {
-        //Log.d(TAG, "setCharacteristicNotification");
-        
-        Boolean result = false;
-        
-        if (gatt != null)
+        ARNETWORKAL_ERROR_ENUM result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK; 
+        synchronized (this)
         {
+            BluetoothGatt localActiveGatt = activeGatt;
             
-            boolean notifSet = gatt.setCharacteristicNotification (characteristic, true);
-            
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(ARNETWORKALBLEMANAGER_CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID);
-            
-            boolean valueSet = descriptor.setValue (BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            
-            boolean descriptorWriten = gatt.writeDescriptor (descriptor);
-            
-            Log.d(TAG, "wait configuration semaphore" );
-            /* wait the configuration semaphore*/
-            try
+            /* If there is an active Gatt, disconnect it */
+            if(localActiveGatt != null)
             {
-                configurationSem.acquire ();
+                isConfiguringCharacteristics = true;
+                configurationCharacteristicError = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
                 
-                /* check the configurationStatus */
-                if (configurationStatus == BluetoothGatt.GATT_SUCCESS)
+                boolean notifSet = localActiveGatt.setCharacteristicNotification (characteristic, true);
+                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(ARNETWORKALBLEMANAGER_CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID);
+                boolean valueSet = descriptor.setValue (BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                boolean descriptorWriten = localActiveGatt.writeDescriptor (descriptor);
+                /* wait the configuration semaphore*/
+                try
                 {
-                    result = true;
+                    configurationSem.acquire ();
+                    result = configurationCharacteristicError;
+                    
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                    result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
                 }
                 
+                isConfiguringCharacteristics = false;
             }
-            catch (InterruptedException e)
+            else
             {
-                e.printStackTrace();
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
             }
+            
         }
+        
         return result;
     }
     
     public boolean writeData (byte data[], BluetoothGattCharacteristic characteristic)
     {
-        //Log.d(TAG, "writeData" );
-        
         boolean result = false;
         
-        if ((gatt != null) && (characteristic != null) && (data != null))
+        BluetoothGatt localActiveGatt = activeGatt;
+        if ((localActiveGatt != null) && (characteristic != null) && (data != null))
         {
-            //Log.d(TAG, "ok write writeCharacteristic value" );
             characteristic.setValue(data);
-            gatt.writeCharacteristic(characteristic);
-            result = true;
+            result = localActiveGatt.writeCharacteristic(characteristic);
         }
         
         return result;
@@ -337,11 +411,8 @@ public class ARNetworkALBLEManager
     
     public boolean readData (List<BluetoothGattCharacteristic> characteristicArray)
     {
-        //Log.d(TAG, "readData" );
-        
         boolean result = false;
         
-        //Log.d(TAG, "wait readCharacteristic semaphore" );
         /* wait the readCharacteristic semaphore*/
         try
         {
@@ -349,14 +420,12 @@ public class ARNetworkALBLEManager
             
             if  (characteristicNotifications.size() > 0)
             {
-                //Log.d(TAG, "lock readCharacteristicMutex " );
                 readCharacteristicMutex.lock();
                 
                 characteristicArray.addAll(characteristicNotifications);
                 characteristicNotifications.clear();
                 
                 readCharacteristicMutex.unlock();
-                //Log.d(TAG, "unlock readCharacteristicMutex " );
                 
                 result = true;
             }
@@ -372,14 +441,52 @@ public class ARNetworkALBLEManager
     public void unlock ()
     {
         /* post all Semaphore to unlock the all the functions */
-        connectSem.release();
+        connectionSem.release();
         configurationSem.release();
         readCharacteristicSem.release();
-        /* disconnectSem is not post because:
+        /* disconnectionSem is not post because:
          * if the connection is fail, disconnect is not call.
          * if the connection is successful, the BLE callback is always called.
          * the disconnect function is called after the join of the network threads.
          */
     }
     
+    public void reset ()
+    {
+        synchronized (this)
+        {
+            
+            /* reset all Semaphores */
+            
+            while (connectionSem.tryAcquire() == true)
+            {
+                /* Do nothing*/
+            }
+            
+            while (disconnectionSem.tryAcquire() == true)
+            {
+                /* Do nothing*/
+            }
+            
+            while (discoverServicesSem.tryAcquire() == true)
+            {
+                /* Do nothing*/
+            }
+            
+            while (discoverCharacteristicsSem.tryAcquire() == true)
+            {
+                /* Do nothing*/
+            }
+            
+            while (readCharacteristicSem.tryAcquire() == true)
+            {
+                /* Do nothing*/
+            }
+            
+            while (configurationSem.tryAcquire() == true)
+            {
+                /* Do nothing*/
+            }
+        }
+    }
 }

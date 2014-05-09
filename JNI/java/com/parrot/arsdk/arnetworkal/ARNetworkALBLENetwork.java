@@ -1,8 +1,6 @@
 package com.parrot.arsdk.arnetworkal;
 
 import android.R.integer;
-import android.util.Log;
-
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattService;
@@ -12,54 +10,85 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_ERROR_ENUM;
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_MANAGER_RETURN_ENUM;
+import com.parrot.arsdk.arsal.ARSALPrint;
 
-public class ARNetworkALBLENetwork
+public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
 {
     private static String TAG = "ARNetworkALBLENetwork";
     
     private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "0000f";
+    private static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
+    private static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
+    
+    private static int ARNETWORKAL_BLENETWORK_BW_PROGRESS_EACH_SEC = 1;
+    private static int ARNETWORKAL_BLENETWORK_BW_NB_ELEMS = 10;
     
     private native static void nativeJNIInit();
+    private native static int nativeGetMediaMTU ();
+    private native static int nativeGetHeaderSize();
     
+    private native static void nativeJNIOnDisconect (int jniARNetworkALBLENetwork);
     private ARNetworkALBLEManager bleManager;
+    
+    private BluetoothDevice deviceBLEService;
     
     private BluetoothGattService recvService;
     private BluetoothGattService sendService;
     private ArrayList<BluetoothGattCharacteristic> array;
     
+    private int[] bwElementUp;
+    private int[] bwElementDown;
+    private int bwIndex;
+    private Semaphore bwSem;
+    private Semaphore bwThreadRunning;
+    private int bwCurrentUp;
+    private int bwCurrentDown;
+    
+    private int jniARNetworkALBLENetwork;
+    
     static
     {
-        //Log.d(TAG, "run static block");
-        
+        ARNETWORKAL_BLENETWORK_MEDIA_MTU = nativeGetMediaMTU ();
+        ARNETWORKAL_BLENETWORK_HEADER_SIZE = nativeGetHeaderSize();
         nativeJNIInit();
     }
     
-    public ARNetworkALBLENetwork ()
+    public ARNetworkALBLENetwork (int jniARNetworkALBLENetwork)
     {
-        //Log.d(TAG, "new ARNetworkALBLENetwork ");
-        
         this.bleManager = null;
         this.array = new ArrayList<BluetoothGattCharacteristic>();
+        this.jniARNetworkALBLENetwork = jniARNetworkALBLENetwork;
+        
+        this.bwElementUp = new int[ARNETWORKAL_BLENETWORK_BW_NB_ELEMS];
+        this.bwElementDown = new int[ARNETWORKAL_BLENETWORK_BW_NB_ELEMS];
+        this.bwSem = new Semaphore (0);
+        this.bwThreadRunning = new Semaphore (0);
     }
     
     public int connect (ARNetworkALBLEManager bleManager, BluetoothDevice deviceBLEService, int[] notificationIDArray)
     {
-        Log.d(TAG, "connect");
-        
         ARNETWORKAL_ERROR_ENUM result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
         BluetoothGattService senderService = null;
         BluetoothGattService receiverService = null;
         
-        this.bleManager = bleManager;
-        
-        /* connect to the device */
-        boolean isConnected = bleManager.connect(deviceBLEService);
-        if (isConnected == false)
+        if (deviceBLEService == null)
         {
-            result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
+            result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BAD_PARAMETER;
+        }
+        
+        if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
+        {
+            /* connect to the device */
+            result = bleManager.connect(deviceBLEService);
+        }
+        
+        if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
+        {
+            result = bleManager.discoverBLENetworkServices();
         }
         
         /* look for the receiver service and the sender service */
@@ -105,70 +134,121 @@ public class ARNetworkALBLENetwork
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            Log.d(TAG, "senderService: " + senderService.getUuid());
-            Log.d(TAG, "receiverService: " + receiverService.getUuid());
+            ARSALPrint.d(TAG, "senderService: " + senderService.getUuid());
+            ARSALPrint.d(TAG, "receiverService: " + receiverService.getUuid());
             
+            bwIndex = 0;
+            bwCurrentUp = 0;
+            bwCurrentDown = 0;
+            for (int i = 0 ; i < ARNETWORKAL_BLENETWORK_BW_NB_ELEMS ; i++)
+            {
+                bwElementUp[i] = 0;
+                bwElementDown[i] = 0;
+            }
+            bwThreadRunning.release();
+            
+            this.bleManager = bleManager;//TODO see
+            this.deviceBLEService = deviceBLEService;
             this.recvService = receiverService;
             this.sendService = senderService;
             
-            /* notify the characteristics */
-            /* if some characteristics are specified to be notified */
+            this.bleManager.setListener(this);
+            
+            List<BluetoothGattCharacteristic> notificationCharacteristics = null;
             if (notificationIDArray != null)
             {
-                /* notify only the characteristics specified */
-                boolean notificationSuccesful = true;
+                notificationCharacteristics = new ArrayList<BluetoothGattCharacteristic>();
+                /* Add the characteristics to be notified */
                 for (int id : notificationIDArray)
                 {
-                    if (notificationSuccesful == true)
-                    {
-                        /* if the characteristic can be notified */
-                        if ((receiverService.getCharacteristics().get(id).getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
-                        {
-                            notificationSuccesful = bleManager.setCharacteristicNotification (this.recvService, receiverService.getCharacteristics().get(id));
-                        }
-                    }
-                }
-                
-                if (notificationSuccesful == false)
-                {
-                    /* disconnecting in error case */
-                    disconnect();
+                    notificationCharacteristics.add(receiverService.getCharacteristics().get(id));
                 }
             }
             else
             {
-                /* Registered notification service for receiver */
-                
-                for (BluetoothGattCharacteristic gattCharacteristic : receiverService.getCharacteristics())
-                {
-                    /* if the characteristic can be notified */
-                    if ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
-                    {
-                        bleManager.setCharacteristicNotification (receiverService, gattCharacteristic);
-                    }
-                }
+                notificationCharacteristics = receiverService.getCharacteristics();
             }
             
+            /* Notify the characteristics */
+            ARNETWORKAL_ERROR_ENUM setNotifCharacteristicResult = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK; //TODO see
+            for (BluetoothGattCharacteristic gattCharacteristic : notificationCharacteristics)
+            {
+                /* if the characteristic can be notified */
+                if ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY)
+                {
+                    setNotifCharacteristicResult = bleManager.setCharacteristicNotification (receiverService, gattCharacteristic);
+                }
+                
+                switch (setNotifCharacteristicResult)
+                {
+                    case ARNETWORKAL_OK:
+                        /* notification successfully set */
+                        /* do nothing */
+                        break;
+                        
+                    case ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING:
+                        /* This service is unknown by ARNetworkAL*/
+                        /* do nothing */
+                        break;
+                        
+                    case ARNETWORKAL_ERROR_BLE_NOT_CONNECTED:
+                        /* the peripheral is disconnected */
+                        result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
+                        break;
+                        
+                    default:
+                        ARSALPrint.e (TAG, "error " + setNotifCharacteristicResult + " unexpected :  " + setNotifCharacteristicResult);
+                        break;
+                }
+            }
         }
         
         return result.getValue();
     }
     
+    public void cancel ()
+    {
+        ARSALPrint.d(TAG, "cancel");
+        
+        disconnect ();
+        
+        /* reset the BLEManager for a new use */
+        bleManager.reset();
+    }
+    
     public void disconnect ()
     {
-        Log.d(TAG, "disconnect");
-        
-        bleManager.disconnect();
-        bleManager = null;
-        
+        synchronized (this)
+        {
+            if(deviceBLEService != null)
+            {
+                ARSALPrint.d(TAG, "disconnect");
+                
+                bwSem.release();
+                try
+                {
+                    bwThreadRunning.acquire ();
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+                
+                bleManager.disconnect();
+                
+                deviceBLEService = null;
+                bleManager.setListener(null);
+                
+                bleManager = null; //TODO see
+            }
+        }
     }
     
     private void unlock ()
     {
-        Log.d(TAG, "unlock");
+        ARSALPrint.d(TAG, "unlock");
         
         bleManager.unlock ();
-        
     }
     
     private int receive ()
@@ -219,6 +299,8 @@ public class ARNetworkALBLENetwork
                 /* Get the frame from the buffer */
                 dataPop.setId(frameId);
                 dataPop.setData(currentFrame);
+                
+                bwCurrentDown += currentFrame.length;
             }
         }
         
@@ -237,7 +319,8 @@ public class ARNetworkALBLENetwork
         
         if (result == ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT)
         {
-            byte[] data = new byte[byteData.length + 2];
+            /* The size of byteData is checked before by the JNI */
+            byte[] data = new byte[byteData.length + ARNETWORKAL_BLENETWORK_HEADER_SIZE];
             
             /* Add frame type */
             data[0] = (byte) type;
@@ -263,6 +346,10 @@ public class ARNetworkALBLENetwork
             if (!bleManager.writeData(data, characteristicToSend))
             {
                 result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
+            }
+            else
+            {
+                bwCurrentUp += data.length;
             }
         }
         
@@ -312,6 +399,11 @@ public class ARNetworkALBLENetwork
             return result;
         }
         
+    }
+    
+    public void onBLEDisconnect ()
+    {
+        nativeJNIOnDisconect (jniARNetworkALBLENetwork);
     }
 }
 

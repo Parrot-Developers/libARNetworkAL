@@ -10,9 +10,9 @@
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
-#define ARNETWORKAL_JNIBLENETWORK_SENDING_BUFFER_SIZE       (20)
-#define ARNETWORKAL_JNIBLENETWORK_SENDING_HEADER_SIZE       (2)
-#define ARNETWORKAL_JNIBLENETWORK_MAX_DATA_BUFFER_SIZE      (ARNETWORKAL_JNIBLENETWORK_SENDING_BUFFER_SIZE - ARNETWORKAL_JNIBLENETWORK_SENDING_HEADER_SIZE)
+#define ARNETWORKAL_JNIBLENETWORK_MEDIA_MTU       (20)
+#define ARNETWORKAL_JNIBLENETWORK_HEADER_SIZE     (2)
+#define ARNETWORKAL_JNIBLENETWORK_MAX_BUFFER_SIZE (ARNETWORKAL_JNIBLENETWORK_MEDIA_MTU - ARNETWORKAL_JNIBLENETWORK_HEADER_SIZE)
 
 /**
  * @brief Callback defines to push next frame to send to Network.
@@ -51,6 +51,14 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_JNIBLENetwork_Receive(ARNETWORKAL_Manage
  * @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
  */
 eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Unlock(ARNETWORKAL_Manager_t *manager);
+
+/**
+ * @brief set the OnDisconnect Callback
+ * @param manager pointer on the Manager
+ * @param onDisconnectCallbak function called on disconnect
+ * @param customData custom data to send to the onDisconnectCallback
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_SetOnDisconnectCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
 
 /**
  * @brief Connect to a BLE device.
