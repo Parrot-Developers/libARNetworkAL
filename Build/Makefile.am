@@ -16,8 +16,7 @@ SOURCE_FILES                                        =   $(HEADER_FILES)         
                                                         ../Sources/ARNETWORKAL_Error.c
 
 if HAVE_COREBLUETOOTH
-SOURCE_FILES                                        +=  ../Sources/BLE/ARNETWORKAL_BLENetwork.m             \
-                                                        ../Sources/BLE/ARNETWORKAL_BLEManager.m
+SOURCE_FILES                                        +=  ../Sources/BLE/ARNETWORKAL_BLENetwork.m             
 endif
 
 # The library names to build (note we are building static and shared libs)

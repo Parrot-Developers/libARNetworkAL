@@ -11,18 +11,21 @@
  *
  *****************************************/
 #include <libARSAL/ARSAL_Endianness.h>
-#include "ARNETWORKAL_Singleton.h"
+#include <libARSAL/ARSAL_Singleton.h>
+#include <libARSAL/ARSAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "ARNETWORKAL_BLENetwork.h"
-#import "ARNETWORKAL_BLEManager.h"
+#import <libARSAL/ARSAL_BLEManager.h>
 
 #define ARNETWORKAL_BLENETWORK_TAG                      "ARNETWORKAL_BLENetwork"
 
 #define ARNETWORKAL_BW_PROGRESS_EACH_SEC 1
 #define ARNETWORKAL_BW_NB_ELEMS 10
 
+
+#define kARNETWORKAL_BLENetwork_NotificationRecv    @"ARNETWORKAL_BLENetwork_NotificationRecv"
 #define ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID @"f"
 
 /*****************************************
@@ -31,13 +34,14 @@
  *
  *****************************************/
 
-@interface ARNETWORKAL_BLENetwork : NSObject <ARNetworkBLEManagerDelegate>
+@interface ARNETWORKAL_BLENetwork : NSObject <ARSALBLEManagerDelegate>
 
 @property (nonatomic, strong) CBPeripheral *peripheral;
 @property (nonatomic, strong) ARSAL_CentralManager *centralManager;
 @property (nonatomic, strong) CBService *recvService;
 @property (nonatomic, strong) CBService *sendService;
-@property (nonatomic, strong) NSMutableArray *array;
+@property (nonatomic, strong) NSMutableArray *recvArray;
+@property (nonatomic, strong) NSMutableArray *recvNotificationCharacteristicArray;
 @property (nonatomic) ARNETWORKAL_Manager_t *manager;
 
 @property (nonatomic) uint32_t *bw_elementsUp;
@@ -78,7 +82,8 @@
     if (self)
     {
         _manager = manager;
-        _array = [[NSMutableArray alloc] init];
+        _recvArray = [[NSMutableArray alloc] init];
+        _recvNotificationCharacteristicArray = [[NSMutableArray alloc] init];
         _bw_elementsUp = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
         _bw_elementsDown = malloc (ARNETWORKAL_BW_NB_ELEMS * sizeof (uint32_t));
         ARSAL_Sem_Init (&_bw_threadRunning, 0, 0);
@@ -98,8 +103,9 @@
 - (eARNETWORKAL_ERROR)connectWithBTManager:(ARSAL_CentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec
 {
     eARNETWORKAL_ERROR result = ARNETWORKAL_OK;
-    eARNETWORKAL_ERROR discoverCharacteristicsResult = ARNETWORKAL_OK;
-    eARNETWORKAL_ERROR setNotifCharacteristicResult = ARNETWORKAL_OK;
+    eARSAL_ERROR discoverCharacteristicsResult = ARSAL_OK;
+    eARSAL_ERROR setNotifCharacteristicResult = ARSAL_OK;
+    eARSAL_ERROR resultSAL = ARSAL_OK;
     CBService *senderService = nil;
     CBService *receiverService = nil;
 
@@ -107,15 +113,28 @@
     {
         result = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
+    
+    if(result == ARNETWORKAL_OK)
+    {
+        [_recvNotificationCharacteristicArray removeAllObjects];
+    }
 
     if(result == ARNETWORKAL_OK)
     {
-        result = [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) connectToPeripheral:peripheral withCentralManager:centralManager];
+        resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) connectToPeripheral:peripheral withCentralManager:centralManager];
+        if (resultSAL != ARSAL_OK)
+        {
+            result = ARNETWORKAL_ERROR_BLE_CONNECTION;
+        }
     }
     
     if(result == ARNETWORKAL_OK)
     {
-        result = [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkServices:nil];
+        resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkServices:nil];
+        if (resultSAL != ARSAL_OK)
+        {
+            result = ARNETWORKAL_ERROR_BLE_DISCONNECTION;
+        }
     }
 
     if(result == ARNETWORKAL_OK)
@@ -126,10 +145,10 @@
             NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
             if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
             {
-                discoverCharacteristicsResult = [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
+                discoverCharacteristicsResult = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
                 switch (discoverCharacteristicsResult)
                 {
-                    case ARNETWORKAL_OK:
+                    case ARSAL_OK:
                         if([[service characteristics] count] > 0)
                         {
                             CBCharacteristic *characteristic = [[service characteristics] objectAtIndex:0];
@@ -145,17 +164,18 @@
                         }
                         break;
                         
-                    case ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING:
+                    case ARSAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING:
                         /* This service is unknown by ARNetworkAL, ignore it */
+                        result = ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING;
                         break;
                         
-                    case ARNETWORKAL_ERROR_BLE_NOT_CONNECTED:
+                    case ARSAL_ERROR_BLE_NOT_CONNECTED:
                         /* the peripheral is disconnected */
                         result = ARNETWORKAL_ERROR_BLE_CONNECTION;
                         break;
                     
                     default:
-                        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_BLENETWORK_TAG, "error %d unexpected : %s", discoverCharacteristicsResult, ARNETWORKAL_Error_ToString(discoverCharacteristicsResult));
+                        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_BLENETWORK_TAG, "error %d unexpected : %s", discoverCharacteristicsResult, ARSAL_Error_ToString(discoverCharacteristicsResult));
                         result = ARNETWORKAL_ERROR_BLE_CONNECTION;
                         break;
                 }
@@ -190,38 +210,42 @@
         _sendService = senderService;
         _recvService = receiverService;
         
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setDelegate:self];
+        [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setDelegate:self];
 
         // Registered notification service for receiver.
         for(CBCharacteristic *characteristic in [receiverService characteristics])
         {
             if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
             {
-                setNotifCharacteristicResult = [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setNotificationCharacteristic:characteristic];
+                setNotifCharacteristicResult = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setNotificationCharacteristic:characteristic];
                 
                 switch (setNotifCharacteristicResult)
                 {
-                    case ARNETWORKAL_OK:
+                    case ARSAL_OK:
                         /* notification successfully set */
-                        /* do nothing */
+                        [_recvNotificationCharacteristicArray addObject:characteristic];
                         break;
                         
-                    case ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING:
+                    case ARSAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING:
                         /* This service is unknown by ARNetworkAL*/
                         /* do nothing */
+                        result = ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
                         break;
                         
-                    case ARNETWORKAL_ERROR_BLE_NOT_CONNECTED:
+                    case ARSAL_ERROR_BLE_NOT_CONNECTED:
                         /* the peripheral is disconnected */
                         result = ARNETWORKAL_ERROR_BLE_CONNECTION;
                         break;
                         
                     default:
-                        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_BLENETWORK_TAG, "error %d unexpected : %s", setNotifCharacteristicResult, ARNETWORKAL_Error_ToString(setNotifCharacteristicResult));
+                        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_BLENETWORK_TAG, "error %d unexpected : %s", setNotifCharacteristicResult, ARSAL_Error_ToString(setNotifCharacteristicResult));
+                        result = ARNETWORKAL_ERROR_BLE_CONNECTION;
                         break;
                 }
             }
         }
+        
+        [SINGLETON_FOR_CLASS(ARSAL_BLEManager) registerNotificationCharacteristics:_recvNotificationCharacteristicArray toKey:kARNETWORKAL_BLENetwork_NotificationRecv];
     }
     
     return result;
@@ -238,10 +262,10 @@
             ARSAL_Sem_Post (&_bw_sem);
             ARSAL_Sem_Wait(&_bw_threadRunning);
 
-            [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager];
+            [SINGLETON_FOR_CLASS(ARSAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager];
 
             _peripheral = nil;
-            [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) setDelegate:nil];
+            [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setDelegate:nil];
         }
     }
     return error;
@@ -276,7 +300,7 @@
 
         characteristicToSend = [[_sendService characteristics] objectAtIndex:frame->id];
 
-        if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
+        if(![SINGLETON_FOR_CLASS(ARSAL_BLEManager) writeData:data toCharacteristic:characteristicToSend])
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
@@ -292,18 +316,18 @@
 - (eARNETWORKAL_MANAGER_RETURN)popFrame:(ARNETWORKAL_Frame_t *)frame
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
-    CBCharacteristic *characteristic = nil;
+    ARSALBLEManagerNotificationData *notificationData = nil;
     /** -- get a Frame of the receiving buffer -- */
     /** if the receiving buffer not contain enough data for the frame head*/
-    if([_array count] == 0)
+    if([_recvArray count] == 0)
     {
         result = ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY;
     }
 
     if (result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
-        characteristic = [_array objectAtIndex:0];
-        if([[characteristic value] length] == 0)
+        notificationData = [_recvArray objectAtIndex:0];
+        if([[notificationData value] length] == 0)
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
@@ -311,11 +335,11 @@
 
     if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
-        uint8_t *currentFrame = (uint8_t *)[[characteristic value] bytes];
+        uint8_t *currentFrame = (uint8_t *)[[notificationData value] bytes];
 
         /** get id */
         int frameId = 0;
-        if(sscanf([[[characteristic UUID] representativeString] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
+        if(sscanf([[[[notificationData characteristic] UUID] representativeString] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
@@ -337,18 +361,18 @@
             currentFrame += sizeof(uint8_t);
 
             /** Get frame size */
-            frame->size = [[characteristic value] length] - (2 * sizeof(uint8_t)) + offsetof(ARNETWORKAL_Frame_t, dataPtr);
+            frame->size = [[notificationData value] length] - (2 * sizeof(uint8_t)) + offsetof(ARNETWORKAL_Frame_t, dataPtr);
 
             /** get data address */
             frame->dataPtr = currentFrame;
 
-            _bw_currentDown += [[characteristic value] length];
+            _bw_currentDown += [[notificationData value] length];
         }
     }
 
     if(result != ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY)
     {
-        [_array removeObjectAtIndex:0];
+        [_recvArray removeObjectAtIndex:0];
     }
 
     if (result != ARNETWORKAL_MANAGER_RETURN_DEFAULT)
@@ -368,7 +392,9 @@
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
 
-    if(![SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) readData:_array])
+    //if(![SINGLETON_FOR_CLASS(ARSAL_BLEManager) readData:_array])
+    
+    if(![SINGLETON_FOR_CLASS(ARSAL_BLEManager) readNotificationData:_recvArray maxCount:INT_MAX toKey:kARNETWORKAL_BLENetwork_NotificationRecv])
     {
         result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
     }
@@ -490,7 +516,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Cancel (ARNETWORKAL_Manager_t *manager
         error = [network disconnect];
         
         /* reset the BLEManager for a new use */
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) reset];
+        [SINGLETON_FOR_CLASS(ARSAL_BLEManager) reset];
     }
     
     return error;
@@ -513,7 +539,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
         CFRelease(manager->receiverObject);
         
         /* reset the BLEManager for a new use */
-        [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) reset];
+        [SINGLETON_FOR_CLASS(ARSAL_BLEManager) reset];
     }
     return error;
 }
@@ -544,7 +570,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_BLENetwork_Receive(ARNETWORKAL_Manager_t
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
 {
     /* -- BLE unlock all functions locked -- */
-    [SINGLETON_FOR_CLASS(ARNETWORKAL_BLEManager) unlock];
+    [SINGLETON_FOR_CLASS(ARSAL_BLEManager) unlock];
     return ARNETWORKAL_OK;
 }
 
