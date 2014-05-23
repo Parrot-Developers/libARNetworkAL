@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 
 import com.parrot.arsdk.arsal.ARSALPrint;
+import com.parrot.arsdk.arsal.ARSALBLEManager;
 
 /**
  * Network manager allow to send and receive on network.
@@ -165,7 +166,7 @@ public class ARNetworkALManager
         if (error == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
             /* create deviceManager */
-            ARNetworkALBLEManager bleManager = new ARNetworkALBLEManager(context.getApplicationContext());
+            ARSALBLEManager bleManager = new ARSALBLEManager(context.getApplicationContext());
             
             /* init the ARNetworkALBLEManager */
             int intError = nativeInitBLENetwork(m_managerPtr, bleManager, device, recvTimeoutSec, notificationIDArray);

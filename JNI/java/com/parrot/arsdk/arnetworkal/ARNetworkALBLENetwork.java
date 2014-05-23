@@ -1,6 +1,5 @@
 package com.parrot.arsdk.arnetworkal;
 
-import android.R.integer;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattService;
@@ -15,8 +14,11 @@ import java.util.concurrent.Semaphore;
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_ERROR_ENUM;
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_MANAGER_RETURN_ENUM;
 import com.parrot.arsdk.arsal.ARSALPrint;
+import com.parrot.arsdk.arsal.ARSALBLEManager;
+import com.parrot.arsdk.arsal.ARSALBLEManagerListener;
+import com.parrot.arsdk.arsal.ARSAL_ERROR_ENUM;
 
-public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
+public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
 {
     private static String TAG = "ARNetworkALBLENetwork";
     
@@ -32,7 +34,7 @@ public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
     private native static int nativeGetHeaderSize();
     
     private native static void nativeJNIOnDisconect (int jniARNetworkALBLENetwork);
-    private ARNetworkALBLEManager bleManager;
+    private ARSALBLEManager bleManager;
     
     private BluetoothDevice deviceBLEService;
     
@@ -69,7 +71,7 @@ public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
         this.bwThreadRunning = new Semaphore (0);
     }
     
-    public int connect (ARNetworkALBLEManager bleManager, BluetoothDevice deviceBLEService, int[] notificationIDArray)
+    public int connect (ARSALBLEManager bleManager, BluetoothDevice deviceBLEService, int[] notificationIDArray)
     {
         ARNETWORKAL_ERROR_ENUM result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
         BluetoothGattService senderService = null;
@@ -82,13 +84,14 @@ public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            /* connect to the device */
-            result = bleManager.connect(deviceBLEService);
+            //bleManagerResult = bleManager.connect(deviceBLEService);
+            result = (bleManager.connect(deviceBLEService) == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
         }
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            result = bleManager.discoverBLENetworkServices();
+            //result = bleManager.discoverBLENetworkServices();
+            result = (bleManager.discoverBLENetworkServices() == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
         }
         
         /* look for the receiver service and the sender service */
@@ -170,7 +173,7 @@ public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
             }
             
             /* Notify the characteristics */
-            ARNETWORKAL_ERROR_ENUM setNotifCharacteristicResult = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK; //TODO see
+            ARSAL_ERROR_ENUM setNotifCharacteristicResult = ARSAL_ERROR_ENUM.ARSAL_OK; //TODO see
             for (BluetoothGattCharacteristic gattCharacteristic : notificationCharacteristics)
             {
                 /* if the characteristic can be notified */
@@ -181,17 +184,17 @@ public class ARNetworkALBLENetwork implements ARNetworkALBLEManagerListener
                 
                 switch (setNotifCharacteristicResult)
                 {
-                    case ARNETWORKAL_OK:
+                    case ARSAL_OK:
                         /* notification successfully set */
                         /* do nothing */
                         break;
                         
-                    case ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING:
+                    case ARSAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING:
                         /* This service is unknown by ARNetworkAL*/
                         /* do nothing */
                         break;
                         
-                    case ARNETWORKAL_ERROR_BLE_NOT_CONNECTED:
+                    case ARSAL_ERROR_BLE_NOT_CONNECTED:
                         /* the peripheral is disconnected */
                         result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
                         break;
