@@ -166,7 +166,7 @@ public class ARNetworkALManager
         if (error == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
             /* create deviceManager */
-            ARSALBLEManager bleManager = new ARSALBLEManager(context.getApplicationContext());
+            ARSALBLEManager bleManager = ARSALBLEManager.getInstance(context.getApplicationContext());
             
             /* init the ARNetworkALBLEManager */
             int intError = nativeInitBLENetwork(m_managerPtr, bleManager, device, recvTimeoutSec, notificationIDArray);
