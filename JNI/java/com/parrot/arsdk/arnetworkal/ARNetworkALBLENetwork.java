@@ -13,6 +13,8 @@ import java.util.concurrent.Semaphore;
 
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_ERROR_ENUM;
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_MANAGER_RETURN_ENUM;
+import com.parrot.arsdk.arsal.ARSALBLEManager.ARSALManagerNotification;
+import com.parrot.arsdk.arsal.ARSALBLEManager.ARSALManagerNotificationData;
 import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSALBLEManager;
 import com.parrot.arsdk.arsal.ARSALBLEManagerListener;
@@ -22,6 +24,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
 {
     private static String TAG = "ARNetworkALBLENetwork";
     
+    private static String ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY = "ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY";
     private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "0000f";
     private static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
     private static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
@@ -40,7 +43,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     
     private BluetoothGattService recvService;
     private BluetoothGattService sendService;
-    private ArrayList<BluetoothGattCharacteristic> array;
+    //private ArrayList<BluetoothGattCharacteristic> recvArray;
+    private ArrayList<ARSALManagerNotificationData> recvArray;
     
     private int[] bwElementUp;
     private int[] bwElementDown;
@@ -62,7 +66,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     public ARNetworkALBLENetwork (int jniARNetworkALBLENetwork)
     {
         this.bleManager = null;
-        this.array = new ArrayList<BluetoothGattCharacteristic>();
+        //this.recvArray = new ArrayList<BluetoothGattCharacteristic>();
+        this.recvArray = new ArrayList<ARSALManagerNotificationData>();
         this.jniARNetworkALBLENetwork = jniARNetworkALBLENetwork;
         
         this.bwElementUp = new int[ARNETWORKAL_BLENETWORK_BW_NB_ELEMS];
@@ -204,6 +209,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                         break;
                 }
             }
+            
+            bleManager.registerNotificationCharacteristics(notificationCharacteristics, ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY);
         }
         
         return result.getValue();
@@ -258,7 +265,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     {
         ARNETWORKAL_MANAGER_RETURN_ENUM result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT;
         
-        if (!bleManager.readData(array))
+        //if (!bleManager.readData(recvArray))
+        if (!bleManager.readDataNotificationData(recvArray, Integer.MAX_VALUE, ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY))
         {
             result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
         }
@@ -271,19 +279,19 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         DataPop dataPop = new DataPop();
         
         ARNETWORKAL_MANAGER_RETURN_ENUM result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT;
-        BluetoothGattCharacteristic characteristic = null;
+        ARSALManagerNotificationData notification = null;
         
         /* -- get a Frame of the receiving buffer -- */
         /* if the receiving buffer not contain enough data for the frame head */
-        if (array.size() == 0)
+        if (recvArray.size() == 0)
         {
             result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY;
         }
         
         if (result == ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT)
         {
-            characteristic = array.get (0);
-            if (characteristic.getValue().length == 0)
+        	notification = recvArray.get (0);
+            if (notification.value.length == 0)
             {
                 result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
             }
@@ -291,10 +299,10 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT)
         {
-            byte[] currentFrame = characteristic.getValue();
+            byte[] currentFrame = notification.value;
             
             /* get id */
-            String frameIdString = characteristic.getUuid().toString().substring(4, 8);
+            String frameIdString = notification.characteristic.getUuid().toString().substring(4, 8);
             int frameId = Integer.parseInt(frameIdString, 16);
             
             if (result == ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT)
@@ -309,7 +317,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result != ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BUFFER_EMPTY)
         {
-            array.remove (0);
+            recvArray.remove (0);
         }
         
         dataPop.setResult (result.getValue());
