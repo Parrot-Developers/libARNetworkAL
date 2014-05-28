@@ -250,7 +250,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIInit(JNIEnv *en
     
     jclass jBLENetworkCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork");
     
-    ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Lcom/parrot/arsdk/arnetworkal/ARNetworkALBLEManager;Landroid/bluetooth/BluetoothDevice;[I)I");
+    ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Lcom/parrot/arsdk/arsal/ARSALBLEManager;Landroid/bluetooth/BluetoothDevice;[I)I");
     ARNETWORKAL_JNIBLENETWORK_METHOD_CANCEL = (*env)->GetMethodID(env, jBLENetworkCls, "cancel", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_DISCONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "disconnect", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME = (*env)->GetMethodID(env, jBLENetworkCls, "pushFrame", "(IIII[B)I");
