@@ -27,6 +27,9 @@
 
 #define kARNETWORKAL_BLENetwork_NotificationRecv    @"ARNETWORKAL_BLENetwork_NotificationRecv"
 #define ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID @"f"
+#define ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21 @"fd23"
+#define ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51 @"fd53"
+
 
 /*****************************************
  *
@@ -128,12 +131,28 @@
         }
     }
     
+    //discover all services
     if(result == ARNETWORKAL_OK)
     {
         resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkServices:nil];
         if (resultSAL != ARSAL_OK)
         {
             result = ARNETWORKAL_ERROR_BLE_DISCONNECTION;
+        }
+    }
+    
+    //discover all characteristics related to known services
+    for(int i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
+    {
+        CBService *service = [[peripheral services] objectAtIndex:i];
+        //NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
+        if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
+        {
+            resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
+            if (resultSAL != ARSAL_OK)
+            {
+                result = ARNETWORKAL_ERROR_BLE_DISCONNECTION;
+            }
         }
     }
 
@@ -145,7 +164,9 @@
             NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
             if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
             {
-                discoverCharacteristicsResult = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
+                //done before
+                //discoverCharacteristicsResult = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
+                discoverCharacteristicsResult = ARSAL_OK;
                 switch (discoverCharacteristicsResult)
                 {
                     case ARSAL_OK:
@@ -246,6 +267,31 @@
         }
         
         [SINGLETON_FOR_CLASS(ARSAL_BLEManager) registerNotificationCharacteristics:_recvNotificationCharacteristicArray toKey:kARNETWORKAL_BLENetwork_NotificationRecv];
+    }
+    
+    for(int i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
+    {
+        CBService *service = [[peripheral services] objectAtIndex:i];
+        //NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
+        if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
+        {
+            for(int j = 0 ; (j < [[service characteristics] count]) && (result == ARNETWORKAL_OK) ; j++)
+            {
+                CBCharacteristic *characteristic = [[service characteristics] objectAtIndex:j];
+                //NSLog(@"Characteristic : %@, %04x", [characteristic.UUID representativeString], (unsigned int)characteristic.UUID);
+                if(((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
+                    && ([[characteristic.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21]
+                    || [[characteristic.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51]))
+                {
+                    resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setNotificationCharacteristic:characteristic];
+                    NSLog(@"==REGISTERED Characteristic : %@, %04x", [characteristic.UUID representativeString], (unsigned int)characteristic.UUID);
+                    if (resultSAL != ARSAL_OK)
+                    {
+                        result = ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
+                    }
+                }
+            }
+        }
     }
     
     return result;
