@@ -17,6 +17,10 @@
 
 #define ARNETWORKAL_WIFINETWORK_DISCONNECT_TIMEOUT_MS 5000 /**< timeout in millisecond before to account a disconnection */
 
+#define ARNETWORKAL_BLENETWORK_MEDIA_MTU            20
+#define ARNETWORKAL_BLENETWORK_HEADER_SIZE          2
+#define ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE      (ARNETWORKAL_BLENETWORK_MEDIA_MTU - ARNETWORKAL_BLENETWORK_HEADER_SIZE)
+
 /**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
  * @see ARNETWORKAL_Manager_PushNextFrame_t

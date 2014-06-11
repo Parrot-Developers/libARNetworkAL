@@ -11,10 +11,6 @@
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 
-#define ARNETWORKAL_BLENETWORK_MEDIA_MTU            20
-#define ARNETWORKAL_BLENETWORK_HEADER_SIZE          2
-#define ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE      (ARNETWORKAL_BLENETWORK_MEDIA_MTU - ARNETWORKAL_BLENETWORK_HEADER_SIZE)
-
 /**
  * @brief Create a new BLENetwork object.
  * @warning This function allocate memory
