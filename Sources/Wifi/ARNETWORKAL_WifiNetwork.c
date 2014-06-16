@@ -422,6 +422,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     /** Initialize socket */
     if(error == ARNETWORKAL_OK)
     {
+        /* Remove SIGPIPE */
+        int set = 1;
+        ARSAL_Socket_Setsockopt (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+        
         sendSin.sin_addr.s_addr = inet_addr (addr);
         sendSin.sin_family = AF_INET;
         sendSin.sin_port = htons (port);
@@ -642,9 +646,29 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
     if(senderObject->size != 0)
     {
         ssize_t bytes = ARSAL_Socket_Send(senderObject->socket, senderObject->buffer, senderObject->size, 0);
-        senderObject->size = 0;
-        senderObject->currentFrame = senderObject->buffer;
-        senderObject->bw_current += bytes;
+        if(bytes > -1)
+        {
+            senderObject->size = 0;
+            senderObject->currentFrame = senderObject->buffer;
+            senderObject->bw_current += bytes;
+        }
+        else
+        {
+            /* check the disconnection */
+            if (senderObject->isDisconnected != 1)
+            {
+                /* wifi disconnected */
+                senderObject->isDisconnected = 1;
+                
+                if (senderObject->onDisconnect != NULL)
+                {
+                    /* Disconnect callback */
+                    senderObject->onDisconnect (manager, senderObject->onDisconnectCustomData);
+                }
+            }
+            
+            result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
+        }
     }
 
     return result;
@@ -774,6 +798,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
 
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
     ARNETWORKAL_WifiNetworkObject *receiverObject = NULL;
+    ARNETWORKAL_WifiNetworkObject *senderObject = NULL;
 
     if ((manager == NULL) || (onDisconnectCallback == NULL))
     {
@@ -791,11 +816,25 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
         /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
     }
     /* No else: skipped by an error */
+    
+    if (error == ARNETWORKAL_OK)
+    {
+        senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+        if (senderObject == NULL)
+        {
+            error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+        }
+        /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
+    }
+    /* No else: skipped by an error */
 
     if (error == ARNETWORKAL_OK)
     {
         receiverObject->onDisconnect = onDisconnectCallback;
         receiverObject->onDisconnectCustomData = customData;
+        
+        senderObject->onDisconnect = onDisconnectCallback;
+        senderObject->onDisconnectCustomData = customData;
     }
     /* No else: skipped by an error */
 
