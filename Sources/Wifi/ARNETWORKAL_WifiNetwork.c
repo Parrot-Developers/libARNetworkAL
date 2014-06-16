@@ -422,9 +422,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     /** Initialize socket */
     if(error == ARNETWORKAL_OK)
     {
+#if HAVE_DECL_SO_NOSIGPIPE
         /* Remove SIGPIPE */
         int set = 1;
         ARSAL_Socket_Setsockopt (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+#endif
         
         sendSin.sin_addr.s_addr = inet_addr (addr);
         sendSin.sin_family = AF_INET;

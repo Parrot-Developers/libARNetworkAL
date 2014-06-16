@@ -91,6 +91,10 @@ AC_HEADER_STDC
 ##########################################################################
 # Check headers
 ##########################################################################
+
+# Check for SO_NOSIGPIPE macros
+AC_CHECK_DECLS([SO_NOSIGPIPE, MSG_NOSIGNAL],[],[],[[#include <sys/socket.h>]])
+
 # Check for CoreBluetooth.h
 AC_LANG_PUSH([Objective C])
 if test x$ac_cv_objc_compiler_gnu = xyes; then
