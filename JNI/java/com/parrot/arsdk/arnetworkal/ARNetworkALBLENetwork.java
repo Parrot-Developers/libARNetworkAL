@@ -19,13 +19,14 @@ import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSALBLEManager;
 import com.parrot.arsdk.arsal.ARSALBLEManagerListener;
 import com.parrot.arsdk.arsal.ARSAL_ERROR_ENUM;
+import com.parrot.arsdk.arsal.ARUUID;
 
 public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
 {
     private static String TAG = "ARNetworkALBLENetwork";
     
     private static String ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY = "ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY";
-    private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "0000f";
+    private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "f";
     private static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
     private static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
     
@@ -110,7 +111,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                 BluetoothGattService gattService = serviesArray.get(index);
                 
                 /* check if it is a parrot service */
-                if (gattService.getUuid().toString().startsWith(ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID))
+                if (ARUUID.getShortUuid(gattService.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID))
                 {
                     /* if there is any characteristic */
                     if (gattService.getCharacteristics().size() > 0)
@@ -302,7 +303,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             byte[] currentFrame = notification.value;
             
             /* get id */
-            String frameIdString = notification.characteristic.getUuid().toString().substring(4, 8);
+            String frameIdString = ARUUID.getShortUuid(notification.characteristic.getUuid());
             int frameId = Integer.parseInt(frameIdString, 16);
             
             if (result == ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT)
