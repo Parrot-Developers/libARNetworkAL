@@ -145,8 +145,8 @@
     for(int i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
     {
         CBService *service = [[peripheral services] objectAtIndex:i];
-        //NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
-        if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
+        //NSLog(@"Service : %@, %04x", [service.UUID shortUUID], (unsigned int)service.UUID);
+        if([[service.UUID shortUUID] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
         {
             resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
             if (resultSAL != ARSAL_OK)
@@ -161,8 +161,8 @@
         for(int i = 0 ; (i < [[peripheral services] count]) && ((senderService == nil) || (receiverService == nil)) && (result == ARNETWORKAL_OK) ; i++)
         {
             CBService *service = [[peripheral services] objectAtIndex:i];
-            NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
-            if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
+            NSLog(@"Service : %@, %@, %04x", [service.UUID representativeString], [service.UUID shortUUID], (unsigned int)service.UUID);
+            if([[service.UUID shortUUID] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
             {
                 //done before
                 //discoverCharacteristicsResult = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) discoverNetworkCharacteristics:nil forService:service];
@@ -213,8 +213,8 @@
 
     if(result == ARNETWORKAL_OK)
     {
-        NSLog(@"Sender service : %@", [senderService.UUID representativeString]);
-        NSLog(@"Receiver service : %@", [receiverService.UUID representativeString]);
+        NSLog(@"Sender service : %@", [senderService.UUID shortUUID]);
+        NSLog(@"Receiver service : %@", [receiverService.UUID shortUUID]);
 
         _bw_index = 0;
         _bw_currentUp = 0;
@@ -272,19 +272,19 @@
     for(int i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
     {
         CBService *service = [[peripheral services] objectAtIndex:i];
-        //NSLog(@"Service : %@, %04x", [service.UUID representativeString], (unsigned int)service.UUID);
-        if([[service.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
+        //NSLog(@"Service : %@, %04x", [service.UUID shortUUID], (unsigned int)service.UUID);
+        if([[service.UUID shortUUID] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
         {
             for(int j = 0 ; (j < [[service characteristics] count]) && (result == ARNETWORKAL_OK) ; j++)
             {
                 CBCharacteristic *characteristic = [[service characteristics] objectAtIndex:j];
-                //NSLog(@"Characteristic : %@, %04x", [characteristic.UUID representativeString], (unsigned int)characteristic.UUID);
+                //NSLog(@"Characteristic : %@, %04x", [characteristic.UUID shortUUID], (unsigned int)characteristic.UUID);
                 if(((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
-                    && ([[characteristic.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21]
-                    || [[characteristic.UUID representativeString] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51]))
+                    && ([[characteristic.UUID shortUUID] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21]
+                    || [[characteristic.UUID shortUUID] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51]))
                 {
                     resultSAL = [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setNotificationCharacteristic:characteristic];
-                    NSLog(@"==REGISTERED Characteristic : %@, %04x", [characteristic.UUID representativeString], (unsigned int)characteristic.UUID);
+                    NSLog(@"==REGISTERED Characteristic : %@, %04x", [characteristic.UUID shortUUID], (unsigned int)characteristic.UUID);
                     if (resultSAL != ARSAL_OK)
                     {
                         result = ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING;
@@ -385,7 +385,8 @@
 
         /** get id */
         int frameId = 0;
-        if(sscanf([[[[notificationData characteristic] UUID] representativeString] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
+        //if(sscanf([[[[notificationData characteristic] UUID] representativeString] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
+        if(sscanf([[[[notificationData characteristic] UUID] shortUUID] cStringUsingEncoding:NSUTF8StringEncoding], "%04x", &frameId) != 1)
         {
             result = ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
         }
