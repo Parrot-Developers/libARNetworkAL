@@ -644,6 +644,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
 
     if(senderObject->size != 0)
     {
@@ -657,12 +658,12 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
         else
         {
             /* check the disconnection */
-            if (senderObject->isDisconnected != 1)
+            if (senderObject->isDisconnected == 0)
             {
                 /* wifi disconnected */
                 senderObject->isDisconnected = 1;
                 
-                if (senderObject->onDisconnect != NULL)
+                if ((senderObject->onDisconnect != NULL) && ((receiverObject == NULL) || (receiverObject->isDisconnected == 0)))
                 {
                     /* Disconnect callback */
                     senderObject->onDisconnect (manager, senderObject->onDisconnectCustomData);
@@ -684,6 +685,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     /** local declarations */
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+    ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
 
     // Create a fd_set to select on both the socket and the "cancel" pipe
     fd_set set;
@@ -772,7 +774,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                     /* wifi disconnected */
                     receiverObject->isDisconnected = 1;
 
-                    if (receiverObject->onDisconnect != NULL)
+                    if ((receiverObject->onDisconnect != NULL) && ((senderObject == NULL) || (senderObject->isDisconnected == 0)))
                     {
                         /* Disconnect callback */
                         receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
