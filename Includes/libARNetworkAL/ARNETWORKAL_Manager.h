@@ -243,9 +243,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork(ARNETWORKAL_Manager_t *m
  * @param deviceManager the OS device manager which will be used for network functions
  * @param device the selected OS specific BLE device to connect to
  * @param recvTimeoutSec timeout in seconds set to limit the time of blocking of the Receive function.
+ * @param notificationIDs list of the buffer ID to notify. If NULL all buffers of the receiver are notify.
+ * @param numberOfNotificationID number of buffer ID to notifiy.
  * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
  */
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, int *notificationIDs, int numberOfNotificationID);
 
 /**
  * @brief Cancel the initialization BLE network.

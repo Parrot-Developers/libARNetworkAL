@@ -89,9 +89,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
  * @param[in] device address of device manager at which the data will be sent and received.
  * @param[in] device address of device at which the data will be sent and received.
  * @param[in] timeoutSec timeout in seconds set on the socket to limit the time of blocking of the receiving.
+ * @param[in] notificationIDs list of the buffer ID to notify. If NULL all buffers of the receiver are notify.
+ * @param[in] numberOfNotificationID size number buffer ID to notifiy.
  * @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
  */
-eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec);
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, int *notificationIDs, int numberOfNotificationID);
 
 /**
  * @brief Cancel the Connect to a BLE device.

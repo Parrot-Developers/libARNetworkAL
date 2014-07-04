@@ -185,7 +185,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseWifiNetwork (ARNETWORKAL_Manager_t *
     return error;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, int *notificationIDs, int numberOfNotificationID)
 {
     /* local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
@@ -205,7 +205,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
 
     if (error == ARNETWORKAL_OK)
     {
-        error = ARNETWORKAL_BLENetwork_Connect(manager, deviceManager, device, recvTimeoutSec);
+        error = ARNETWORKAL_BLENetwork_Connect(manager, deviceManager, device, recvTimeoutSec, notificationIDs, numberOfNotificationID);
     }
 
     if(error == ARNETWORKAL_OK)

@@ -59,7 +59,7 @@
 @property (nonatomic) void* onDisconnectCustomData;
 
 - (id)initWithManager:(ARNETWORKAL_Manager_t *)manager;
-- (eARNETWORKAL_ERROR)connectWithBTManager:(ARSAL_CentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec;
+- (eARNETWORKAL_ERROR)connectWithBTManager:(ARSAL_CentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec andNotificationIDArray:(NSArray *) notificationIDArray;
 - (eARNETWORKAL_ERROR)disconnect;
 - (eARNETWORKAL_MANAGER_RETURN)pushFrame:(ARNETWORKAL_Frame_t *)frame;
 - (eARNETWORKAL_MANAGER_RETURN)popFrame:(ARNETWORKAL_Frame_t *)frame;
@@ -103,7 +103,7 @@
     ARSAL_Sem_Destroy (&_bw_threadRunning);
 }
 
-- (eARNETWORKAL_ERROR)connectWithBTManager:(ARSAL_CentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec
+- (eARNETWORKAL_ERROR)connectWithBTManager:(ARSAL_CentralManager *)centralManager peripheral:(CBPeripheral *)peripheral andTimeout:(int)recvTimeoutSec andNotificationIDArray:(NSArray *) notificationIDArray
 {
     eARNETWORKAL_ERROR result = ARNETWORKAL_OK;
     eARSAL_ERROR discoverCharacteristicsResult = ARSAL_OK;
@@ -155,7 +155,7 @@
             }
         }
     }
-
+    
     if(result == ARNETWORKAL_OK)
     {
         for(int i = 0 ; (i < [[peripheral services] count]) && ((senderService == nil) || (receiverService == nil)) && (result == ARNETWORKAL_OK) ; i++)
@@ -232,9 +232,25 @@
         _recvService = receiverService;
         
         [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setDelegate:self];
-
+        
+        NSArray *notificationCharateristics = nil;
+        if (notificationIDArray != nil)
+        {
+            NSMutableArray *notificationCharateristicsTmp = [[NSMutableArray alloc] init];
+            /* Add the charateristics to be notified */
+            for(NSNumber *notificationID in notificationIDArray)
+            {
+                [notificationCharateristicsTmp addObject: [[receiverService characteristics] objectAtIndex:[notificationID intValue]]];
+            }
+            
+            notificationCharateristics = notificationCharateristicsTmp;
+        }
+        else
+        {
+            notificationCharateristics = [receiverService characteristics];
+        }
         // Registered notification service for receiver.
-        for(CBCharacteristic *characteristic in [receiverService characteristics])
+        for(CBCharacteristic *characteristic in notificationCharateristics)
         {
             if((characteristic.properties & CBCharacteristicPropertyNotify) == CBCharacteristicPropertyNotify)
             {
@@ -621,12 +637,23 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Unlock(ARNETWORKAL_Manager_t *manager)
     return ARNETWORKAL_OK;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec)
+eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, int *notificationIDs, int numberOfNotificationID)
 {
     ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
     ARSAL_CentralManager *centralManager = (__bridge ARSAL_CentralManager *)deviceManager;
     CBPeripheral *peripheral = (__bridge CBPeripheral *)device;
-    return [network connectWithBTManager:centralManager peripheral:peripheral andTimeout:recvTimeoutSec];
+    
+    NSMutableArray *bleNotificationIDs = nil;
+    if(notificationIDs != NULL)
+    {
+        bleNotificationIDs = [[NSMutableArray alloc]init];
+        for(int i = 0 ; i < numberOfNotificationID ; i++)
+        {
+            [bleNotificationIDs addObject: [NSNumber numberWithInt: notificationIDs[i]]];
+        }
+    }
+    
+    return [network connectWithBTManager:centralManager peripheral:peripheral andTimeout:recvTimeoutSec andNotificationIDArray: bleNotificationIDs];
 }
 
 eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_GetBandwidth (ARNETWORKAL_Manager_t *manager, uint32_t *uploadBw, uint32_t *downloadBw)
