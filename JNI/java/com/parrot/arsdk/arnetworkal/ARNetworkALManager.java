@@ -29,7 +29,7 @@ public class ARNetworkALManager
     private native int nativeUnlock(long jManager);
     private native int nativeCloseWifiNetwork(long jManager);
     
-    private native int nativeInitBLENetwork(long jManager, Object jdeviceManager, BluetoothDevice jdevice, int recvTimeoutSec, int[] notificationIDArray);
+    private native int nativeInitBLENetwork(long jManager, Object jContext, BluetoothDevice jdevice, int recvTimeoutSec, int[] notificationIDArray);
     private native int nativeCloseBLENetwork(long jManager);
     private native int nativeCancelBLENetwork(long jManager);
 
@@ -166,10 +166,10 @@ public class ARNetworkALManager
         if (error == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
             /* create deviceManager */
-            ARSALBLEManager bleManager = ARSALBLEManager.getInstance(context.getApplicationContext());
+            //ARSALBLEManager bleManager = ARSALBLEManager.getInstance(context.getApplicationContext());
             
             /* init the ARNetworkALBLEManager */
-            int intError = nativeInitBLENetwork(m_managerPtr, bleManager, device, recvTimeoutSec, notificationIDArray);
+            int intError = nativeInitBLENetwork(m_managerPtr, context.getApplicationContext(), device, recvTimeoutSec, notificationIDArray);
             error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
         
@@ -183,7 +183,7 @@ public class ARNetworkALManager
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
         
-        if(m_initOk == true)
+        if(m_initOk == false)
         {
             error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
         }

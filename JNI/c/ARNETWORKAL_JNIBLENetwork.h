@@ -63,22 +63,22 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_SetOnDisconnectCallback(ARNETWORKAL
 /**
  * @brief Connect to a BLE device.
  * @param[in] manager address of the pointer on the Manager
- * @param[in] device address of device manager at which the data will be sent and received.
  * @param[in] device address of device at which the data will be sent and received.
  * @param[in] timeoutSec timeout in seconds set on the socket to limit the time of blocking of the receiving.
  * @param[in] notificationIDArray list of the buffer ID to notify
  * @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
  */
-eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, jintArray notificationIDArray);
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, jintArray notificationIDArray);
 
 /**
  * @brief create the JNIBLENetwork
  * @warning This function allocate memory
  * @param[in] manager the networkAL_Manager
+ * @param[in] jContext the context
  * @return error equal to ARNETWORKAL_OK if the connection if successful otherwise equal to negative value in eARNETWORKAL_ERROR.
  * @see ARNETWORKAL_JNIBLENetwork_Delete()
  */
-eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager);
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager, jobject jContext);
 
 /**
  * @brief Delete the JNIBLENetwork

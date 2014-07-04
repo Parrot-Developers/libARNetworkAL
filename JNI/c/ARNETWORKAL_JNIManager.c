@@ -209,7 +209,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseWifiNetwork(JNIE
  * @return error equal to ARNETWORKAL_OK if the init was successful otherwise see eARNETWORKAL_ERROR.
  **/
 JNIEXPORT jint JNICALL
-Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jintArray jdeviceManager, jobject jdevice, jint recvTimeoutSec, jintArray notificationIDArray)
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jobject jContext, jobject jdevice, jint recvTimeoutSec, jintArray notificationIDArray)
 {
     /* -- initialize BLE of sending and receiving the data. -- */
 
@@ -228,12 +228,12 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv
 
     if(error == ARNETWORKAL_OK)
     {
-        error = ARNETWORKAL_JNIBLENetwork_New (manager);
+        error = ARNETWORKAL_JNIBLENetwork_New (manager, jContext);
     }
 
     if (error == ARNETWORKAL_OK)
     {
-        error = ARNETWORKAL_JNIBLENetwork_Connect(manager, (ARNETWORKAL_BLEDeviceManager_t) jdeviceManager, (ARNETWORKAL_BLEDevice_t) jdevice, recvTimeoutSec, notificationIDArray);
+        error = ARNETWORKAL_JNIBLENetwork_Connect(manager, jdevice, recvTimeoutSec, notificationIDArray);
     }
 
     if(error == ARNETWORKAL_OK)

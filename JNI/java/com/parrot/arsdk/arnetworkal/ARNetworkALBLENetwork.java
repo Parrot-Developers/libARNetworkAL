@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import android.content.Context;
 
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_ERROR_ENUM;
 import com.parrot.arsdk.arnetworkal.ARNETWORKAL_MANAGER_RETURN_ENUM;
@@ -64,9 +65,9 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         nativeJNIInit();
     }
     
-    public ARNetworkALBLENetwork (int jniARNetworkALBLENetwork)
+    public ARNetworkALBLENetwork (int jniARNetworkALBLENetwork, Context context)
     {
-        this.bleManager = null;
+        this.bleManager = ARSALBLEManager.getInstance(context);
         //this.recvArray = new ArrayList<BluetoothGattCharacteristic>();
         this.recvArray = new ArrayList<ARSALManagerNotificationData>();
         this.jniARNetworkALBLENetwork = jniARNetworkALBLENetwork;
@@ -77,7 +78,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         this.bwThreadRunning = new Semaphore (0);
     }
     
-    public int connect (ARSALBLEManager bleManager, BluetoothDevice deviceBLEService, int[] notificationIDArray)
+    public int connect (BluetoothDevice deviceBLEService, int[] notificationIDArray)
     {
         ARNETWORKAL_ERROR_ENUM result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
         BluetoothGattService senderService = null;
@@ -90,13 +91,11 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            //bleManagerResult = bleManager.connect(deviceBLEService);
             result = (bleManager.connect(deviceBLEService) == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
         }
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            //result = bleManager.discoverBLENetworkServices();
             result = (bleManager.discoverBLENetworkServices() == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
         }
         
@@ -156,7 +155,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             }
             bwThreadRunning.release();
             
-            this.bleManager = bleManager;//TODO see
             this.deviceBLEService = deviceBLEService;
             this.recvService = receiverService;
             this.sendService = senderService;
@@ -219,8 +217,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     
     public void cancel ()
     {
-        ARSALPrint.d(TAG, "cancel");
-        
         disconnect ();
         
         /* reset the BLEManager for a new use */
@@ -231,10 +227,12 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     {
         synchronized (this)
         {
-            if(deviceBLEService != null)
-            {
+            //if(deviceBLEService != null)
+            //{
                 ARSALPrint.d(TAG, "disconnect");
                 
+                // TODO see not work if bw is not yet initilaized 
+                /*
                 bwSem.release();
                 try
                 {
@@ -243,15 +241,13 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                 catch (InterruptedException e)
                 {
                     e.printStackTrace();
-                }
+                }*/
                 
                 bleManager.disconnect();
                 
                 deviceBLEService = null;
                 bleManager.setListener(null);
-                
-                bleManager = null; //TODO see
-            }
+            //}
         }
     }
     
@@ -291,7 +287,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_DEFAULT)
         {
-        	notification = recvArray.get (0);
+            notification = recvArray.get (0);
             if (notification.value.length == 0)
             {
                 result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;

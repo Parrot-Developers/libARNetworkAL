@@ -65,11 +65,12 @@ typedef struct
  * @post ARNETWORKAL_JNIBLENETWORK_ObjectDelete() must be called to delete the BLE network and free the memory allocated.
  * @param env java environement
  * @param[in] manager the networkAL Manager
+ * @param[in] jContext the context
  * @param[out] error eARNETWORKAL_ERROR
  * @return the new ARNETWORKAL_JNIBLENETWORK
  * @see ARNETWORKAL_JNIBLENETWORK_ObjectDelete()
  */
-ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, ARNETWORKAL_Manager_t *manager, eARNETWORKAL_ERROR *error);
+ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, ARNETWORKAL_Manager_t *manager, jobject jContext, eARNETWORKAL_ERROR *error);
 
 /**
  * @brief Delete the ARNETWORKAL_JNIBLENETWORK_Object_t
@@ -101,7 +102,7 @@ void ARNETWORKAL_JNIBLENetwork_ObjectDeleteCurrentFrame (JNIEnv *env, ARNETWORKA
  *
  *****************************************/
 
-ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, ARNETWORKAL_Manager_t *manager, eARNETWORKAL_ERROR *error)
+ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv *env, ARNETWORKAL_Manager_t *manager, jobject jContext, eARNETWORKAL_ERROR *error)
 {
     /* -- Create a new sender -- */
     
@@ -125,10 +126,10 @@ ARNETWORKAL_JNIBLENETWORK_Object_t *ARNETWORKAL_JNIBLENetwork_ObjectNew (JNIEnv 
     {
         /* get jBLENetwork */
         jBLENetworkCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork");
-        jmethodID jBLENnetworkMethodConstructor = (*env)->GetMethodID(env, jBLENetworkCls, "<init>", "(I)V");
+        jmethodID jBLENnetworkMethodConstructor = (*env)->GetMethodID(env, jBLENetworkCls, "<init>", "(ILandroid/content/Context;)V");
         
         /* create jBLENetwork */
-        jBLENetwork = (*env)->NewObject(env, jBLENetworkCls, jBLENnetworkMethodConstructor, jniBLENetwork);
+        jBLENetwork = (*env)->NewObject(env, jBLENetworkCls, jBLENnetworkMethodConstructor, jniBLENetwork, jContext);
         
         /* free jBLENetworkCls */
         (*env)->DeleteLocalRef (env, jBLENetworkCls );
@@ -250,7 +251,8 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIInit(JNIEnv *en
     
     jclass jBLENetworkCls = (*env)->FindClass(env, "com/parrot/arsdk/arnetworkal/ARNetworkALBLENetwork");
     
-    ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Lcom/parrot/arsdk/arsal/ARSALBLEManager;Landroid/bluetooth/BluetoothDevice;[I)I");
+    ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "connect", "(Landroid/bluetooth/BluetoothDevice;[I)I");
+    
     ARNETWORKAL_JNIBLENETWORK_METHOD_CANCEL = (*env)->GetMethodID(env, jBLENetworkCls, "cancel", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_DISCONNECT = (*env)->GetMethodID(env, jBLENetworkCls, "disconnect", "()V");
     ARNETWORKAL_JNIBLENETWORK_METHOD_PUSH_FRAME = (*env)->GetMethodID(env, jBLENetworkCls, "pushFrame", "(IIII[B)I");
@@ -283,7 +285,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALBLENetwork_nativeJNIOnDisconect(JNI
     }
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager)
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager, jobject jContext)
 {
     /* -- create a new BLEnetwork -- */
     
@@ -323,7 +325,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_New (ARNETWORKAL_Manager_t *manager
     /* create the jniBLENetwork */
     if (error == ARNETWORKAL_OK)
     {
-        jniBLENetwork = ARNETWORKAL_JNIBLENetwork_ObjectNew (env, manager, &error);
+        jniBLENetwork = ARNETWORKAL_JNIBLENetwork_ObjectNew (env, manager, jContext, &error);
     }
     
     if (error == ARNETWORKAL_OK)
@@ -714,7 +716,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_SetOnDisconnectCallback (ARNETWORKA
     return error;
 }
 
-eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDeviceManager_t deviceManager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, jintArray notificationIDArray)
+eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_BLEDevice_t device, int recvTimeoutSec, jintArray notificationIDArray)
 {
     /* -- connect the BLE network -- */
     
@@ -724,7 +726,6 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *man
     
     ARNETWORKAL_JNIBLENETWORK_Object_t *jniBLENetwork = (ARNETWORKAL_JNIBLENETWORK_Object_t *) manager->senderObject;
     jobject jBLENetwork = jniBLENetwork->jBLENetwork;
-    jobject centralManager = (jobject) deviceManager;
     jobject peripheral = (jobject)device;
     
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
@@ -744,7 +745,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_JNIBLENetwork_Connect (ARNETWORKAL_Manager_t *man
     if (env != NULL)
     {
         /* java BLE connect */
-        result = (*env)->CallIntMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT, centralManager, peripheral, notificationIDArray);
+        result = (*env)->CallIntMethod(env, jBLENetwork, ARNETWORKAL_JNIBLENETWORK_METHOD_CONNECT, peripheral, notificationIDArray);
     }
     else
     {
