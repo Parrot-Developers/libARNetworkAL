@@ -28,6 +28,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     
     private static String ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY = "ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY";
     private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "f";
+    private static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21 = "fd23";
+    private static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51 = "fd53";    
     private static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
     private static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
     
@@ -210,6 +212,33 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             }
             
             bleManager.registerNotificationCharacteristics(notificationCharacteristics, ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY);
+        }
+        
+        if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
+        {
+            ARSAL_ERROR_ENUM resultSal = ARSAL_ERROR_ENUM.ARSAL_OK; 
+            BluetoothGatt gatt = bleManager.getGatt ();
+            List<BluetoothGattService> serviesArray = gatt.getServices();
+            
+            for (int index=0; ((index < serviesArray.size()) && (resultSal == ARSAL_ERROR_ENUM.ARSAL_OK)); index++)
+            {
+                BluetoothGattService gattService = serviesArray.get(index);
+                List<BluetoothGattCharacteristic> characteristicsArray = gattService.getCharacteristics();
+                ARSALPrint.w(TAG, "ARNetwork service " + ARUUID.getShortUuid(gattService.getUuid()));
+                
+                for (int j=0; ((j < characteristicsArray.size()) && (resultSal == ARSAL_ERROR_ENUM.ARSAL_OK)); j++)
+                {
+                    BluetoothGattCharacteristic gattCharacteristic = characteristicsArray.get(j);
+                    ARSALPrint.w(TAG, "ARNetwork service " + ARUUID.getShortUuid(gattCharacteristic.getUuid()));
+                    
+                    if (ARUUID.getShortUuid(gattCharacteristic.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21)
+                        || ARUUID.getShortUuid(gattCharacteristic.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51))
+                    {
+                        resultSal = bleManager.setCharacteristicNotification(gattService, gattCharacteristic);
+                        ARSALPrint.w(TAG, "ARNetwork ====setCharacteristicNotification " + ARUUID.getShortUuid(gattService.getUuid()) + " " + resultSal);
+                    }
+                }
+            }
         }
         
         return result.getValue();
