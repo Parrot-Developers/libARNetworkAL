@@ -1,24 +1,19 @@
 package com.parrot.arsdk.arnetworkal;
 
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothGattCharacteristic;
-
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 
-import com.parrot.arsdk.arnetworkal.ARNETWORKAL_ERROR_ENUM;
-import com.parrot.arsdk.arnetworkal.ARNETWORKAL_MANAGER_RETURN_ENUM;
-import com.parrot.arsdk.arsal.ARSALBLEManager.ARSALManagerNotification;
-import com.parrot.arsdk.arsal.ARSALBLEManager.ARSALManagerNotificationData;
-import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSALBLEManager;
+import com.parrot.arsdk.arsal.ARSALBLEManager.ARSALManagerNotificationData;
 import com.parrot.arsdk.arsal.ARSALBLEManagerListener;
+import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSAL_ERROR_ENUM;
 import com.parrot.arsdk.arsal.ARUUID;
 
@@ -385,14 +380,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             
             /* Get the good characteristic */
             BluetoothGattCharacteristic characteristicToSend = null;
-            if (type == ARNETWORKAL_FRAME_TYPE_ENUM.ARNETWORKAL_FRAME_TYPE_ACK.getValue())
-            {
-                characteristicToSend = recvService.getCharacteristics().get(id);
-            }
-            else
-            {
-                characteristicToSend = sendService.getCharacteristics().get(id);
-            }
+
+            characteristicToSend = sendService.getCharacteristics().get(id);
             
             /* write the data */
             if (!bleManager.writeData(data, characteristicToSend))
