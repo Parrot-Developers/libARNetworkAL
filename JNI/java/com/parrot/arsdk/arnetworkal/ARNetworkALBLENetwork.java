@@ -273,11 +273,24 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                 }*/
                 
                 bleManager.disconnect();
-                
-                deviceBLEService = null;
+
+
+                //cleanup
+                cleanup();
                 bleManager.setListener(null);
+                
             //}
         }
+    }
+    
+    private void cleanup()
+    {
+        // cleanup the ble references
+        deviceBLEService = null;
+        recvService = null;
+        sendService = null;
+        
+        recvArray.clear();
     }
     
     private void unlock ()
@@ -441,6 +454,9 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     public void onBLEDisconnect ()
     {
         nativeJNIOnDisconect (jniARNetworkALBLENetwork);
+        
+        // cleanup
+        cleanup();
     }
 }
 
