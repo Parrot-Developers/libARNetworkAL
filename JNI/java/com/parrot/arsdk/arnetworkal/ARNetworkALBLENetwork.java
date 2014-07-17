@@ -147,6 +147,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             ARSALPrint.d(TAG, "senderService: " + senderService.getUuid());
             ARSALPrint.d(TAG, "receiverService: " + receiverService.getUuid());
             
+            /*
             bwIndex = 0;
             bwCurrentUp = 0;
             bwCurrentDown = 0;
@@ -156,6 +157,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                 bwElementDown[i] = 0;
             }
             bwThreadRunning.release();
+            */
             
             this.deviceBLEService = deviceBLEService;
             this.recvService = receiverService;
