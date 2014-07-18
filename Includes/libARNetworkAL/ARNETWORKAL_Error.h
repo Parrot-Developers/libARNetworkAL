@@ -33,8 +33,9 @@ typedef enum
     ARNETWORKAL_ERROR_BLE_NOT_CONNECTED,             /**< BLE is not connected */
     ARNETWORKAL_ERROR_BLE_DISCONNECTION,             /**< BLE disconnection error */
     ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING,      /**< BLE network services discovering error */
-    ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING,    /**< BLE network characteristics discovering error */
-    ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING     /**< BLE network characteristic configuring error */
+    ARNETWORKAL_ERROR_BLE_CHARACTERISTICS_DISCOVERING,  /**< BLE network characteristics discovering error */
+    ARNETWORKAL_ERROR_BLE_CHARACTERISTIC_CONFIGURING,   /**< BLE network characteristic configuring error */
+    ARNETWORKAL_ERROR_BLE_STACK,                        /**< BLE stack generic error */
 
 } eARNETWORKAL_ERROR;
 

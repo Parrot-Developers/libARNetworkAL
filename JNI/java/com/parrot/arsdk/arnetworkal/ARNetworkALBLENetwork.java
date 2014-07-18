@@ -65,7 +65,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     public ARNetworkALBLENetwork (int jniARNetworkALBLENetwork, Context context)
     {
         this.bleManager = ARSALBLEManager.getInstance(context);
-        //this.recvArray = new ArrayList<BluetoothGattCharacteristic>();
         this.recvArray = new ArrayList<ARSALManagerNotificationData>();
         this.jniARNetworkALBLENetwork = jniARNetworkALBLENetwork;
         
@@ -88,7 +87,20 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            result = (bleManager.connect(deviceBLEService) == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
+            ARSAL_ERROR_ENUM resultAL = bleManager.connect(deviceBLEService);
+            
+            if (resultAL == ARSAL_ERROR_ENUM.ARSAL_OK)
+            {
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK;
+            }
+            else if (resultAL == ARSAL_ERROR_ENUM.ARSAL_ERROR_BLE_STACK)
+            {
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_STACK;
+            }
+            else
+            {
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_CONNECTION;
+            }
         }
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
