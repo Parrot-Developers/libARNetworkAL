@@ -421,17 +421,33 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             /* Get the good characteristic */
             BluetoothGattCharacteristic characteristicToSend = null;
 
-            characteristicToSend = sendService.getCharacteristics().get(id);
-            
-            /* write the data */
-            if (!bleManager.writeData(data, characteristicToSend))
+            if(sendService != null)
             {
-                result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
+                if(id >= 0 && id < sendService.getCharacteristics().size())
+                {
+                   characteristicToSend = sendService.getCharacteristics().get(id);
+                
+                    /* write the data */
+                    if (!bleManager.writeData(data, characteristicToSend))
+                    {
+                        result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BAD_FRAME;
+                    }
+                    else
+                    {
+                        bwCurrentUp += data.length;
+                    } 
+                }
+                else
+                {
+                    result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_BAD_PARAMETERS;
+                }
+                
             }
             else
             {
-                bwCurrentUp += data.length;
+                result = ARNETWORKAL_MANAGER_RETURN_ENUM.ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
             }
+            
         }
         
         return result.getValue();
