@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
+import android.os.SystemClock;
 
 import com.parrot.arsdk.arsal.ARSALBLEManager;
 import com.parrot.arsdk.arsal.ARSALBLEManager.ARSALManagerNotificationData;
@@ -20,6 +21,7 @@ import com.parrot.arsdk.arsal.ARUUID;
 public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
 {
     private static String TAG = "ARNetworkALBLENetwork";
+    private static final long BASIC_TEST_SLEEP = 2000;
     
     private static String ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY = "ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY";
     private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "f";
@@ -87,6 +89,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
+            SystemClock.sleep(BASIC_TEST_SLEEP);
             ARSAL_ERROR_ENUM resultAL = bleManager.connect(deviceBLEService);
             
             if (resultAL == ARSAL_ERROR_ENUM.ARSAL_OK)
@@ -105,47 +108,66 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            result = (bleManager.discoverBLENetworkServices() == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
+            SystemClock.sleep(BASIC_TEST_SLEEP);
+            ARSAL_ERROR_ENUM resultAL = bleManager.discoverBLENetworkServices();
+            result = (resultAL == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
         }
         
         /* look for the receiver service and the sender service */
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            BluetoothGatt gatt = bleManager.getGatt ();
-            List<BluetoothGattService> serviesArray = gatt.getServices();
+            SystemClock.sleep(BASIC_TEST_SLEEP);
             
-            for (int index = 0 ; index < serviesArray.size() && ((senderService == null) || (receiverService == null)) ; index++ )
+            BluetoothGatt gatt = bleManager.getGatt ();
+            
+            if(gatt != null)
             {
-                BluetoothGattService gattService = serviesArray.get(index);
+                List<BluetoothGattService> serviesArray = gatt.getServices();
                 
-                /* check if it is a parrot service */
-                if (ARUUID.getShortUuid(gattService.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID))
+                if(serviesArray != null)
                 {
-                    /* if there is any characteristic */
-                    if (gattService.getCharacteristics().size() > 0)
+                    for (int index = 0 ; index < serviesArray.size() && ((senderService == null) || (receiverService == null)) ; index++ )
                     {
-                        BluetoothGattCharacteristic gattCharacteristic = gattService.getCharacteristics().get(0);
+                        BluetoothGattService gattService = serviesArray.get(index);
                         
-                        if ((senderService == null) && ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) == BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE))
+                        /* check if it is a parrot service */
+                        if (ARUUID.getShortUuid(gattService.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID))
                         {
-                            senderService = gattService;
+                            /* if there is any characteristic */
+                            if (gattService.getCharacteristics().size() > 0)
+                            {
+                                BluetoothGattCharacteristic gattCharacteristic = gattService.getCharacteristics().get(0);
+                                
+                                if ((senderService == null) && ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) == BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE))
+                                {
+                                    senderService = gattService;
+                                }
+                                
+                                if ((receiverService == null) && ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY))
+                                {
+                                    receiverService = gattService;
+                                }
+                            }
                         }
-                        
-                        if ((receiverService == null) && ((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY))
-                        {
-                            receiverService = gattService;
-                        }
+                        /*
+                         * NO ELSE
+                         * It's not a Parrot characteristic, ignore it
+                         */
                     }
                 }
-                /*
-                 * NO ELSE
-                 * It's not a Parrot characteristic, ignore it
-                 */
+                else
+                {
+                    ARSALPrint.e(TAG, "no service");
+                }
+                
+                if ((senderService == null) || (receiverService == null))
+                {
+                    result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
+                }
             }
-            
-            if ((senderService == null) || (receiverService == null))
+            else
             {
-                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
+                result = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_NOT_CONNECTED;
             }
         }
         
@@ -179,7 +201,14 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                 /* Add the characteristics to be notified */
                 for (int id : notificationIDArray)
                 {
-                    notificationCharacteristics.add(receiverService.getCharacteristics().get(id));
+                    if(id < receiverService.getCharacteristics().size())
+                    {
+                        notificationCharacteristics.add(receiverService.getCharacteristics().get(id));
+                    }
+                    else
+                    {
+                        ARSALPrint.e(TAG, "error receiverService.getCharacteristics().size(): " + receiverService.getCharacteristics().size() +" id to notify: " + id);
+                    }
                 }
             }
             else
@@ -282,8 +311,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                 }*/
                 
                 bleManager.disconnect();
-
-
+                
                 //cleanup
                 cleanup();
                 bleManager.setListener(null);
