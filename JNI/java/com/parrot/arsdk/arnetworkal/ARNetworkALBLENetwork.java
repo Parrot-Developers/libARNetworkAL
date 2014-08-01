@@ -21,7 +21,6 @@ import com.parrot.arsdk.arsal.ARUUID;
 public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
 {
     private static String TAG = "ARNetworkALBLENetwork";
-    private static final long BASIC_TEST_SLEEP = 2000;
     
     private static String ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY = "ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY";
     private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "f";
@@ -44,7 +43,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     
     private BluetoothGattService recvService;
     private BluetoothGattService sendService;
-    //private ArrayList<BluetoothGattCharacteristic> recvArray;
     private ArrayList<ARSALManagerNotificationData> recvArray;
     
     private int[] bwElementUp;
@@ -89,7 +87,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            SystemClock.sleep(BASIC_TEST_SLEEP);
             ARSAL_ERROR_ENUM resultAL = bleManager.connect(deviceBLEService);
             
             if (resultAL == ARSAL_ERROR_ENUM.ARSAL_OK)
@@ -108,7 +105,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            SystemClock.sleep(BASIC_TEST_SLEEP);
             ARSAL_ERROR_ENUM resultAL = bleManager.discoverBLENetworkServices();
             result = (resultAL == ARSAL_ERROR_ENUM.ARSAL_OK) ? ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK : ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR_BLE_SERVICES_DISCOVERING;
         }
@@ -116,8 +112,6 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         /* look for the receiver service and the sender service */
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            SystemClock.sleep(BASIC_TEST_SLEEP);
-            
             BluetoothGatt gatt = bleManager.getGatt ();
             
             if(gatt != null)
@@ -421,9 +415,9 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
             /* Get the good characteristic */
             BluetoothGattCharacteristic characteristicToSend = null;
 
-            if(sendService != null)
+            if (sendService != null)
             {
-                if(id >= 0 && id < sendService.getCharacteristics().size())
+                if ((id >= 0) && (id < sendService.getCharacteristics().size()))
                 {
                    characteristicToSend = sendService.getCharacteristics().get(id);
                 
