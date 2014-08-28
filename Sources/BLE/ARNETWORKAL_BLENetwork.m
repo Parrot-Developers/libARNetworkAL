@@ -457,7 +457,7 @@
 
     //if(![SINGLETON_FOR_CLASS(ARSAL_BLEManager) readData:_array])
     
-    if(![SINGLETON_FOR_CLASS(ARSAL_BLEManager) readNotificationData:_recvArray maxCount:INT_MAX toKey:kARNETWORKAL_BLENetwork_NotificationRecv])
+    if([SINGLETON_FOR_CLASS(ARSAL_BLEManager) readNotificationData:_recvArray maxCount:INT_MAX timeout:nil toKey:kARNETWORKAL_BLENetwork_NotificationRecv] != ARSAL_OK)
     {
         result = ARNETWORKAL_MANAGER_RETURN_NO_DATA_AVAILABLE;
     }
