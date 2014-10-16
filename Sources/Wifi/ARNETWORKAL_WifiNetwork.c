@@ -432,6 +432,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
         sendSin.sin_family = AF_INET;
         sendSin.sin_port = htons (port);
 
+        int flags = fcntl(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, F_GETFL, 0);
+        fcntl(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, F_SETFL, flags | O_NONBLOCK);
+
         connectError = ARSAL_Socket_Connect (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, (struct sockaddr*) &sendSin, sizeof (sendSin));
 
         if (connectError != 0)
@@ -657,19 +660,30 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
         }
         else
         {
-            /* check the disconnection */
-            if (senderObject->isDisconnected == 0)
+            switch (errno)
             {
-                /* wifi disconnected */
-                senderObject->isDisconnected = 1;
-                
-                if ((senderObject->onDisconnect != NULL) && ((receiverObject == NULL) || (receiverObject->isDisconnected == 0)))
+            case EAGAIN:
+                ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "Socket buffer full (errno = %d , %s)", errno, strerror(errno));
+                senderObject->size = 0;
+                senderObject->currentFrame = senderObject->buffer;
+                break;
+            default:
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Socket send error (errno = %d , %s)", errno, strerror(errno));
+                /* check the disconnection */
+                if (senderObject->isDisconnected == 0)
                 {
-                    /* Disconnect callback */
-                    senderObject->onDisconnect (manager, senderObject->onDisconnectCustomData);
+                    /* wifi disconnected */
+                    senderObject->isDisconnected = 1;
+
+                    if ((senderObject->onDisconnect != NULL) && ((receiverObject == NULL) || (receiverObject->isDisconnected == 0)))
+                    {
+                        /* Disconnect callback */
+                        senderObject->onDisconnect (manager, senderObject->onDisconnectCustomData);
+                    }
                 }
+                break;
             }
-            
+
             result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
         }
     }
