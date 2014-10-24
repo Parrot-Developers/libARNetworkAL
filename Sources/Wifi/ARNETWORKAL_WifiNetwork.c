@@ -446,6 +446,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
                 break;
 
             default:
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "%s: error = %d", __func__, connectError);
                 error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
@@ -517,6 +518,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
                 break;
 
             default:
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "%s: error = %d", __func__, errorBind);
                 error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
@@ -940,6 +942,7 @@ void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *
                     break;
 
                 default:
+                    ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "%s: error = %d", __func__, errno);
                     error = ARNETWORKAL_ERROR_WIFI;
                     break;
                 }
