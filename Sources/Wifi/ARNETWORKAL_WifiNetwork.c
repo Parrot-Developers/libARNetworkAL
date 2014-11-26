@@ -822,6 +822,8 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
 
                     if ((receiverObject->onDisconnect != NULL) && ((senderObject == NULL) || (senderObject->isDisconnected == 0)))
                     {
+                        ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "connection lost (too long time without reception)");
+                        
                         /* Disconnect callback */
                         receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
                     }
