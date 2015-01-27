@@ -253,7 +253,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitBLENetwork (ARNETWORKAL_Manager_t *ma
     }
     else
     {
-        ARNETWORKAL_BLENetwork_Delete(manager);
+        error = ARNETWORKAL_BLENetwork_Delete(manager);
     }
 
 #else

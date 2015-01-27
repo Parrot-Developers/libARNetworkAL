@@ -147,6 +147,11 @@
         result = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
     
+    if([NSThread isMainThread])
+    {
+        result = ARNETWORKAL_ERROR_MAIN_THREAD;
+    }
+    
     if(result == ARNETWORKAL_OK)
     {
         [_recvNotificationCharacteristicArray removeAllObjects];
@@ -351,13 +356,21 @@
     {
         if (_peripheral != nil)
         {
-            ARSAL_Sem_Post (&_bw_sem);
-            ARSAL_Sem_Wait(&_bw_threadRunning);
+            if ([NSThread isMainThread])
+            {
+                error = ARNETWORKAL_ERROR_MAIN_THREAD;
+            }
+            
+            if (error == ARNETWORKAL_OK)
+            {
+                ARSAL_Sem_Post (&_bw_sem);
+                ARSAL_Sem_Wait(&_bw_threadRunning);
 
-            [SINGLETON_FOR_CLASS(ARSAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager];
-
-            _peripheral = nil;
-            [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setDelegate:nil];
+                [SINGLETON_FOR_CLASS(ARSAL_BLEManager) disconnectPeripheral:_peripheral withCentralManager:_centralManager];
+                
+                _peripheral = nil;
+                [SINGLETON_FOR_CLASS(ARSAL_BLEManager) setDelegate:nil];
+            }
         }
     }
     return error;
@@ -626,14 +639,31 @@ eARNETWORKAL_ERROR ARNETWORKAL_BLENetwork_Delete (ARNETWORKAL_Manager_t *manager
 
     if(error == ARNETWORKAL_OK)
     {
-        ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
-        error = [network disconnect];
-        CFRelease(manager->senderObject);
-        CFRelease(manager->receiverObject);
         
-        /* reset the BLEManager for a new use */
-        [SINGLETON_FOR_CLASS(ARSAL_BLEManager) reset];
+        ARNETWORKAL_BLENetwork *network = (__bridge ARNETWORKAL_BLENetwork *)manager->senderObject;
+        
+        if (network != nil)
+        {
+            error = [network disconnect];
+
+            //check error
+            if (manager->senderObject != nil)
+            {
+                CFRelease(manager->senderObject);
+                manager->senderObject = nil;
+            }
+            
+            if (manager->receiverObject != nil)
+            {
+                CFRelease(manager->receiverObject);
+                manager->receiverObject = nil;
+            }
+            
+            /* reset the BLEManager for a new use */
+            [SINGLETON_FOR_CLASS(ARSAL_BLEManager) reset];
+        }
     }
+    
     return error;
 }
 

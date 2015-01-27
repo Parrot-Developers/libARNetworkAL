@@ -48,6 +48,7 @@ typedef enum
     ARNETWORKAL_ERROR_ALLOC,                         /**< Memory allocation error */
     ARNETWORKAL_ERROR_BAD_PARAMETER,                 /**< Bad parameters */
     ARNETWORKAL_ERROR_FIFO_INIT,                     /**< Fifo creation error (details set in errno) */
+    ARNETWORKAL_ERROR_MAIN_THREAD,                   /**< The function cannot be run in main thread */
 
     ARNETWORKAL_ERROR_MANAGER = -2000,               /**< Manager generic error */
     ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED, /**< The current manager does not support this operation */
