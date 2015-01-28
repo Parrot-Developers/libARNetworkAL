@@ -56,7 +56,12 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     private static String ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY = "ARNETWORKAL_BLENETWORK_NOTIFICATIONS_KEY";
     private static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID = "f";
     private static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21 = "fd23";
-    private static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51 = "fd53";    
+    private static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51 = "fd53";
+    
+    public final static String ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID_RFCOMM = "fe00";
+    public final static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_RFCOMM_WRITE = "fe01";
+    public final static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_RFCOMM_READ = "fe02";
+    
     private static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
     private static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
     
@@ -300,7 +305,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
                     ARSALPrint.w(TAG, "ARNetwork service " + ARUUID.getShortUuid(gattCharacteristic.getUuid()));
                     
                     if (ARUUID.getShortUuid(gattCharacteristic.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_21)
-                        || ARUUID.getShortUuid(gattCharacteristic.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51))
+                        || ARUUID.getShortUuid(gattCharacteristic.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_FTP_51)
+                        || ARUUID.getShortUuid(gattCharacteristic.getUuid()).startsWith(ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_RFCOMM_READ))
                     {
                         resultSal = bleManager.setCharacteristicNotification(gattService, gattCharacteristic);
                         ARSALPrint.w(TAG, "ARNetwork ====setCharacteristicNotification " + ARUUID.getShortUuid(gattService.getUuid()) + " " + resultSal);
