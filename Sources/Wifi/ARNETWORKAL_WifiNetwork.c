@@ -510,7 +510,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
         wifiReceiver = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
 
         wifiReceiver->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
-        if (manager->receiverObject < 0)
+        if (wifiReceiver->socket < 0)
         {
             error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
         }
