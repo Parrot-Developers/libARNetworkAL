@@ -452,20 +452,21 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     /** Initialize socket */
     if(error == ARNETWORKAL_OK)
     {
+        int sockfd = ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket;
 #if HAVE_DECL_SO_NOSIGPIPE
         /* Remove SIGPIPE */
         int set = 1;
-        ARSAL_Socket_Setsockopt (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
+        ARSAL_Socket_Setsockopt (sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 #endif
         
         sendSin.sin_addr.s_addr = inet_addr (addr);
         sendSin.sin_family = AF_INET;
         sendSin.sin_port = htons (port);
 
-        int flags = fcntl(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, F_GETFL, 0);
-        fcntl(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, F_SETFL, flags | O_NONBLOCK);
+        int flags = fcntl(sockfd, F_GETFL, 0);
+        fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
 
-        connectError = ARSAL_Socket_Connect (((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket, (struct sockaddr*) &sendSin, sizeof (sendSin));
+        connectError = ARSAL_Socket_Connect (sockfd, (struct sockaddr*) &sendSin, sizeof (sendSin));
 
         if (connectError != 0)
         {
@@ -476,7 +477,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
                 break;
 
             default:
-                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "%s: error = %d", __func__, connectError);
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "connect fd=%d addr='%s' port=%d: error='%s'", sockfd, addr, port, strerror(errno));
                 error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
@@ -548,7 +549,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
                 break;
 
             default:
-                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "%s: error = %d", __func__, errorBind);
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "bind fd=%d, addr='0.0.0.0', port=%d: error='%s'", wifiReceiver->socket, port, strerror(errno));
                 error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
