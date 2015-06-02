@@ -1,32 +1,32 @@
 /*
-    Copyright (C) 2014 Parrot SA
+  Copyright (C) 2014 Parrot SA
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the 
-      distribution.
-    * Neither the name of Parrot nor the names
-      of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written
-      permission.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  * Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+  * Neither the name of Parrot nor the names
+  of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written
+  permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
-    AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-    OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  SUCH DAMAGE.
 */
 /**
  * @file ARNETWORKAL_WifiNetwork.c
@@ -50,6 +50,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 #include <libARSAL/ARSAL.h>
 
@@ -80,6 +81,7 @@
 typedef struct _ARNETWORKAL_WifiNetworkObject_
 {
     int socket;
+    int socketBufferSize;
     int fifo[2];
     uint8_t *buffer;
     uint8_t *currentFrame;
@@ -104,14 +106,21 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
  * @param receiverObject wifi receiver object
  * @return 0 if is false and 1 in otherwise
  */
-uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(ARNETWORKAL_WifiNetworkObject *receiverObject);
+static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(ARNETWORKAL_WifiNetworkObject *receiverObject);
 
 
 /**
  * @brief Flush the receive socket.
  * @param receiverObject wifi receiver object
  */
-void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject);
+static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject);
+
+/**
+ * @brief Gets the available size of the send buffer
+ * @param senderObject wifi sender object
+ * @return The size (in bytes) available in the send buffer (negative means that the size could not be computed)
+ */
+static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_WifiNetworkObject *senderObject);
 
 /*****************************************
  *
@@ -136,6 +145,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         {
             ARNETWORKAL_WifiNetworkObject *wifiObj = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
             wifiObj->socket = -1;
+            wifiObj->socketBufferSize = -1;
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
             memset(&(wifiObj->lastDataReceivedDate), 0, sizeof(struct timespec));
@@ -182,6 +192,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_New (ARNETWORKAL_Manager_t *manager)
         {
             ARNETWORKAL_WifiNetworkObject *wifiObj = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
             wifiObj->socket = -1;
+            wifiObj->socketBufferSize = -1;
             wifiObj->fifo[0] = -1;
             wifiObj->fifo[1] = -1;
             memset(&(wifiObj->lastDataReceivedDate), 0, sizeof(struct timespec));
@@ -427,6 +438,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     /** local declarations */
     struct sockaddr_in sendSin;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    ARNETWORKAL_WifiNetworkObject *wifiSender = NULL;
     int connectError;
 
     /** Check parameters */
@@ -438,12 +450,13 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     /** Create sender Object */
     if(error == ARNETWORKAL_OK)
     {
-        ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
-        if(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket < 0)
+        wifiSender = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+        wifiSender->socket = ARSAL_Socket_Create (AF_INET, SOCK_DGRAM, 0);
+        if(wifiSender->socket < 0)
         {
             error = ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION;
         }
-        if (pipe(((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->fifo) != 0)
+        if (pipe(wifiSender->fifo) != 0)
         {
             error = ARNETWORKAL_ERROR_FIFO_INIT;
         }
@@ -452,13 +465,19 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     /** Initialize socket */
     if(error == ARNETWORKAL_OK)
     {
-        int sockfd = ((ARNETWORKAL_WifiNetworkObject *)manager->senderObject)->socket;
+        int sockfd = wifiSender->socket;
 #if HAVE_DECL_SO_NOSIGPIPE
         /* Remove SIGPIPE */
         int set = 1;
         ARSAL_Socket_Setsockopt (sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
 #endif
-        
+
+        /* get the socket buffer size */
+        int bufferSize;
+        int size = sizeof (bufferSize);
+        ARSAL_Socket_Getsockopt (sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&bufferSize, &size);
+        wifiSender->socketBufferSize = bufferSize;
+
         sendSin.sin_addr.s_addr = inet_addr (addr);
         sendSin.sin_family = AF_INET;
         sendSin.sin_port = htons (port);
@@ -563,10 +582,25 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     ARNETWORKAL_WifiNetworkObject *wifiSendObj = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    int nextSize = wifiSendObj->size + frame->size;
 
-    if((wifiSendObj->size + frame->size) > ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE)
+    if(nextSize > ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE)
     {
         result = ARNETWORKAL_MANAGER_RETURN_BUFFER_FULL;
+    }
+
+    if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
+    {
+        int availableSpaceInSocket = ARNETWORKAL_WifiNetwork_GetAvailableSendSize (wifiSendObj);
+        if (availableSpaceInSocket < 0)
+        {
+            // We could not get the available size, accept the frame anyway
+        }
+        else if (availableSpaceInSocket < nextSize)
+        {
+            // The available size is too small for the frame
+            result = ARNETWORKAL_MANAGER_RETURN_BUFFER_FULL;
+        }
     }
 
     if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
@@ -824,7 +858,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                     if ((receiverObject->onDisconnect != NULL) && ((senderObject == NULL) || (senderObject->isDisconnected == 0)))
                     {
                         ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "connection lost (too long time without reception)");
-                        
+
                         /* Disconnect callback */
                         receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
                     }
@@ -869,7 +903,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
         /* No Else: the checking parameters sets error to ARNETWORKAL_ERROR_BAD_PARAMETER and stop the processing */
     }
     /* No else: skipped by an error */
-    
+
     if (error == ARNETWORKAL_OK)
     {
         senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
@@ -885,7 +919,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
     {
         receiverObject->onDisconnect = onDisconnectCallback;
         receiverObject->onDisconnectCustomData = customData;
-        
+
         senderObject->onDisconnect = onDisconnectCallback;
         senderObject->onDisconnectCustomData = customData;
     }
@@ -900,7 +934,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
  *
  *****************************************/
 
-uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_WifiNetworkObject *receiverObject)
+static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_WifiNetworkObject *receiverObject)
 {
     /* -- Check if the wifi network is stay too long without receive. -- */
 
@@ -939,7 +973,7 @@ uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_WifiNetwork
     return isTooLongWithoutReceive;
 }
 
-void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject)
+static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject)
 {
     /* -- flush the receive socket -- */
 
@@ -990,4 +1024,33 @@ void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *
         ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error occurred : %s", ARNETWORKAL_Error_ToString (error));
     }
     /* No else: no error to print */
+}
+
+static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_WifiNetworkObject *senderObject)
+{
+    int currentBytesInSocket;
+    int err;
+    int sockfd = senderObject->socket;
+    int buffSize = senderObject->socketBufferSize;
+    int available = -1;
+    if (buffSize < 0)
+    {
+        return -1;
+    }
+
+    err = ioctl(sockfd, TIOCOUTQ, &currentBytesInSocket);
+    if (err >= 0)
+    {
+        available = buffSize - currentBytesInSocket;
+        if (available < 0)
+        {
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Available size %d < 0 ! (buff = %d, current = %d)", available, buffSize, currentBytesInSocket);
+        }
+    }
+    else
+    {
+        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error during ioctl %d (%s)", errno, strerror(errno));
+    }
+
+    return available;
 }
