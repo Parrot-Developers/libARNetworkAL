@@ -173,6 +173,22 @@ typedef void (*ARNETWORKAL_Manager_OnDisconnect_t) (ARNETWORKAL_Manager_t *manag
 typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_SetOnDisconnectCallback_t) (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
 
 /**
+ * @brief Sets a buffer size
+ * @param manager The manager
+ * @param bufferSize The requested buffer size
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_SetBufferSize_t) (ARNETWORKAL_Manager_t *manager, int bufferSize);
+
+/**
+ * @brief Gets a buffer size
+ * @param manager The manager
+ * @param bufferSize Pointer which will hold the requested size
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_GetBufferSize_t) (ARNETWORKAL_Manager_t *manager, int *bufferSize);
+
+/**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
  * @see ARNETWORKAL_Manager_PushNextFrame_t
  * @see ARNETWORKAL_Manager_PopNextFrame_t
@@ -189,6 +205,10 @@ struct ARNETWORKAL_Manager_t
     ARNETWORKAL_Manager_GetBandwidth_t getBandwidth; /**< Manager specific getBandwidth function */
     ARNETWORKAL_Manager_BandwidthThread_t bandwidthThread; /**< Manager specific bandwidth thread EP */
     ARNETWORKAL_Manager_SetOnDisconnectCallback_t setOnDisconnectCallback; /**< function to set the onDisconnect callback */
+    ARNETWORKAL_Manager_SetBufferSize_t setSendBufferSize; /**< Manager specific set send buffer size */
+    ARNETWORKAL_Manager_SetBufferSize_t setRecvBufferSize; /**< Manager specific set recv buffer size */
+    ARNETWORKAL_Manager_GetBufferSize_t getSendBufferSize; /**< Manager specific get send buffer size */
+    ARNETWORKAL_Manager_GetBufferSize_t getRecvBufferSize; /**< Manager specific get recv buffer size */
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
@@ -295,11 +315,43 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseBLENetwork(ARNETWORKAL_Manager_t *ma
 
 /**
  * @brief set the OnDisconnect Callback
- * @warning Only call by the ARNetworkManager 
+ * @warning Only call by the ARNetworkManager
  * @param manager pointer on the Manager
  * @param onDisconnectCallbak function called on disconnect
  * @param customData custom data sent to the onDisconnectCallback
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetOnDisconnectCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
+
+/**
+ * @brief Sets the size of the send buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize requested size for the buffer
+ * @return ARNETWORKAL_OK if the buffer size was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetSendBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize);
+
+/**
+ * @brief Sets the size of the revceive buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize requested size for the buffer
+ * @return ARNETWORKAL_OK if the buffer size was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize);
+
+/**
+ * @brief Gets the size of the send buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize Pointer which will hold the size of the buffer
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetSendBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
+
+/**
+ * @brief Gets the size of the receive buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize Pointer which will hold the size of the buffer
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
 
 #endif /** _ARNETWORKAL_MANAGER_H_ */

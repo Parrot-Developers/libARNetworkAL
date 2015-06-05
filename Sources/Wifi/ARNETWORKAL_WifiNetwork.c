@@ -928,6 +928,61 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback (ARNETWORKAL_
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetSendBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    int err = ARSAL_Socket_Setsockopt (senderObject->socket, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize));
+    if (err == 0)
+    {
+        // The kernel doubles the requested value (see socket(7) manual page for more information)
+        senderObject->socketBufferSize = 2*bufferSize;
+    }
+    else
+    {
+        error = ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT;
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+    int err = ARSAL_Socket_Setsockopt (receiverObject->socket, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize));
+    if (err == 0)
+    {
+        // The kernel doubles the requested value (see socket(7) manual page for more information)
+        receiverObject->socketBufferSize = 2*bufferSize;
+    }
+    else
+    {
+        error = ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT;
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize)
+{
+    if (bufferSize == NULL) { return ARNETWORKAL_ERROR_BAD_PARAMETER; }
+    int size = sizeof(*bufferSize);
+    ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    int err = ARSAL_Socket_Getsockopt (senderObject->socket, SOL_SOCKET, SO_SNDBUF, bufferSize, &size);
+    eARNETWORKAL_ERROR error = (err == 0) ? ARNETWORKAL_OK : ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT;
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize)
+{
+    if (bufferSize == NULL) { return ARNETWORKAL_ERROR_BAD_PARAMETER; }
+    int size = sizeof(*bufferSize);
+    ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+    int err = ARSAL_Socket_Getsockopt (receiverObject->socket, SOL_SOCKET, SO_RCVBUF, bufferSize, &size);
+    eARNETWORKAL_ERROR error = (err == 0) ? ARNETWORKAL_OK : ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT;
+    return error;
+}
+
+
 /*****************************************
  *
  *             private implementation :

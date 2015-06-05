@@ -59,6 +59,8 @@ typedef enum
     ARNETWORKAL_ERROR_WIFI = -4000,                  /**< Wifi generic error */
     ARNETWORKAL_ERROR_WIFI_SOCKET_CREATION,          /**< Wifi socket error during creation */
     ARNETWORKAL_ERROR_WIFI_SOCKET_PERMISSION_DENIED, /**< Wifi socket permission denied */
+    ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT,            /**< wifi socket error on getopt */
+    ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT,            /**< wifi socket error on setopt */
 
     ARNETWORKAL_ERROR_BLE_CONNECTION = -5000,        /**< BLE connection generic error */
     ARNETWORKAL_ERROR_BLE_NOT_CONNECTED,             /**< BLE is not connected */

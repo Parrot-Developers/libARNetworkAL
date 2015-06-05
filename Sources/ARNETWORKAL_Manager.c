@@ -1,32 +1,32 @@
 /*
-    Copyright (C) 2014 Parrot SA
+  Copyright (C) 2014 Parrot SA
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the 
-      distribution.
-    * Neither the name of Parrot nor the names
-      of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written
-      permission.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  * Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+  * Neither the name of Parrot nor the names
+  of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written
+  permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
-    AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-    OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  SUCH DAMAGE.
 */
 /**
  * @file ARNETWORKAL_Manager.c
@@ -88,22 +88,11 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     ARNETWORKAL_Manager_t *manager = NULL;
     eARNETWORKAL_ERROR localError = ARNETWORKAL_OK;
     /** Create the Manager */
-    manager = malloc (sizeof(ARNETWORKAL_Manager_t));
+    manager = calloc (1, sizeof(ARNETWORKAL_Manager_t));
     if (manager != NULL)
     {
         /** Initialize to default values */
-        manager->pushFrame = (ARNETWORKAL_Manager_PushFrame_t) NULL;
-        manager->popFrame = (ARNETWORKAL_Manager_PopFrame_t) NULL;
-        manager->send = (ARNETWORKAL_Manager_Send_t) NULL;
-        manager->receive = (ARNETWORKAL_Manager_Receive_t) NULL;
-        manager->unlock = (ARNETWORKAL_Manager_Unlock_t) NULL;
-        manager->getBandwidth = (ARNETWORKAL_Manager_GetBandwidth_t) NULL;
-        manager->setOnDisconnectCallback = (ARNETWORKAL_Manager_SetOnDisconnectCallback_t) NULL;
-        manager->bandwidthThread = (ARNETWORKAL_Manager_BandwidthThread_t) NULL;
-        manager->receiverObject = (void *) NULL;
-        manager->senderObject = (void *) NULL;
         manager->maxIds = ARNETWORKAL_MANAGER_DEFAULT_ID_MAX;
-        manager->maxBufferSize = 0;
     }
     else
     {
@@ -165,7 +154,11 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->bandwidthThread = ARNETWORKAL_WifiNetwork_BandwidthThread;
         manager->maxIds = ARNETWORKAL_MANAGER_WIFI_ID_MAX;
         manager->maxBufferSize = ARNETWORKAL_WIFINETWORK_MAX_DATA_BUFFER_SIZE;
-        manager->setOnDisconnectCallback = &ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback;
+        manager->setOnDisconnectCallback = ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback;
+        manager->setRecvBufferSize = ARNETWORKAL_WifiNetwork_SetRecvBufferSize;
+        manager->getRecvBufferSize = ARNETWORKAL_WifiNetwork_GetRecvBufferSize;
+        manager->setSendBufferSize = ARNETWORKAL_WifiNetwork_SetSendBufferSize;
+        manager->getSendBufferSize = ARNETWORKAL_WifiNetwork_GetSendBufferSize;
     }
     else
     {
@@ -178,20 +171,20 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelWifiNetwork (ARNETWORKAL_Manager_t *manager)
 {
     /* -- Cancel the initWifiNetwork -- */
-    
+
     /* local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    
+
     if (manager == NULL)
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
-    
+
     if (error == ARNETWORKAL_OK)
     {
         error = ARNETWORKAL_WifiNetwork_Cancel(manager);
     }
-    
+
     return error;
 }
 
@@ -268,14 +261,14 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelBLENetwork (ARNETWORKAL_Manager_t *
     /* Cancel initBLENetwork */
     /* local declarations */
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    
+
 #if defined(HAVE_COREBLUETOOTH_COREBLUETOOTH_H)
     /* check parameters*/
     if (manager == NULL)
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
     }
-    
+
     if( error == ARNETWORKAL_OK)
     {
         error = ARNETWORKAL_BLENetwork_Cancel(manager);
@@ -283,7 +276,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelBLENetwork (ARNETWORKAL_Manager_t *
 #else
     error = ARNETWORKAL_ERROR_NETWORK_TYPE;
 #endif
-    
+
     return error;
 }
 
@@ -372,9 +365,9 @@ void* ARNETWORKAL_Manager_BandwidthThread (void *manager)
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetOnDisconnectCallback (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData)
 {
     /* -- set the OnDisconnect Callback -- */
-    
+
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    
+
     if (manager == NULL)
     {
         error = ARNETWORKAL_ERROR_BAD_PARAMETER;
@@ -387,6 +380,78 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetOnDisconnectCallback (ARNETWORKAL_Mana
     {
         error = manager->setOnDisconnectCallback (manager, onDisconnectCallback, customData);
     }
-    
+
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetSendBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->setSendBufferSize == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->setSendBufferSize(manager, bufferSize);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->setRecvBufferSize == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->setRecvBufferSize(manager, bufferSize);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetSendBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->getSendBufferSize == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->getSendBufferSize(manager, bufferSize);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->getRecvBufferSize == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->getRecvBufferSize(manager, bufferSize);
+    }
     return error;
 }

@@ -63,6 +63,9 @@ public class ARNetworkALManager
     private native int nativeCloseBLENetwork(long jManager);
     private native int nativeCancelBLENetwork(long jManager);
 
+    private native int nativeSetSendBufferSize(long jManager, int bufferSize);
+    private native int nativeSetRecvBufferSize(long jManager, int bufferSize);
+
     private long m_managerPtr;
     private boolean m_initOk;
 
@@ -167,6 +170,28 @@ public class ARNetworkALManager
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
         int intError = nativeCloseWifiNetwork(m_managerPtr);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
+     * Sets the send buffer size
+     */
+    public ARNETWORKAL_ERROR_ENUM setSendBufferSize(int bufferSize)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSetSendBufferSize(m_managerPtr, bufferSize);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
+     * Sets the recv buffer size
+     */
+    public ARNETWORKAL_ERROR_ENUM setRecvBufferSize(int bufferSize)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSetRecvBufferSize(m_managerPtr, bufferSize);
         error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }

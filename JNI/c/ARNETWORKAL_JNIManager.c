@@ -1,32 +1,32 @@
 /*
-    Copyright (C) 2014 Parrot SA
+  Copyright (C) 2014 Parrot SA
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in
-      the documentation and/or other materials provided with the 
-      distribution.
-    * Neither the name of Parrot nor the names
-      of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written
-      permission.
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  * Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+  * Neither the name of Parrot nor the names
+  of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written
+  permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
-    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
-    AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-    OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-    SUCH DAMAGE.
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  SUCH DAMAGE.
 */
 /**
  * @file ARNETWORKAL_JNIManager.c
@@ -83,7 +83,7 @@ JNI_OnLoad(JavaVM *VM, void *reserved)
 
     /** Saving the reference to the java virtual machine */
     ARNETWORKAL_JNIManager_VM = VM;
-    
+
     ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_JNIMANAGER_TAG, "JNI_OnLoad ARNETWORKAL_JNIManager_VM: %d ", ARNETWORKAL_JNIManager_VM);
 
     /** Return the JNI version */
@@ -244,11 +244,11 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv
     /* -- initialize BLE of sending and receiving the data. -- */
 
     ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, " nativeInitBLENetwork");
-    
+
     /* local declarations */
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    
+
     /** -- Initialize the BLE Network -- */
     /** check parameters*/
     if (manager == NULL)
@@ -277,7 +277,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitBLENetwork(JNIEnv
         manager->maxBufferSize = ARNETWORKAL_JNIBLENETWORK_MAX_BUFFER_SIZE;
         manager->setOnDisconnectCallback = ARNETWORKAL_JNIBLENetwork_SetOnDisconnectCallback;
     }
-    
+
     return error;
 }
 
@@ -293,9 +293,9 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCancelBLENetwork(JNIE
 {
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    
+
     ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, " nativeCancelBLENetwork");
-    
+
     if(manager)
     {
         error = ARNETWORKAL_JNIBLENetwork_Cancel(manager);
@@ -320,13 +320,45 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseBLENetwork(JNIEn
 {
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    
+
     ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, " nativeCloseBLENetwork");
-    
+
     if(manager)
     {
         error = ARNETWORKAL_JNIBLENetwork_Delete(manager);
     }
 
+    return error;
+}
+
+/**
+ * @brief Sets the send bufer size.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager address of the ARNETWORKAL_Manager_t
+ * @param size The size to set
+ * @return error equal to ARNETWORKAL_OK if the set was successful otherwise see eARNETWORKAL_ERROR.
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetSendBufferSize(JNIEnv *env, jobject obj, jlong jManager, jint size)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetSendBufferSize(manager, (int)size);
+    return error;
+}
+
+/**
+ * @brief Sets the recv bufer size.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager address of the ARNETWORKAL_Manager_t
+ * @param size The size to set
+ * @return error equal to ARNETWORKAL_OK if the set was successful otherwise see eARNETWORKAL_ERROR.
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetRecvBufferSize(JNIEnv *env, jobject obj, jlong jManager, jint size)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetRecvBufferSize(manager, (int)size);
     return error;
 }

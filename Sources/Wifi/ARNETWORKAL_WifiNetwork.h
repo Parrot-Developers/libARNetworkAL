@@ -154,4 +154,36 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
  */
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetOnDisconnectCallback(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_Manager_OnDisconnect_t onDisconnectCallback, void *customData);
 
+/**
+ * @brief Sets the size of the send buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize requested size for the buffer
+ * @return ARNETWORKAL_OK if the buffer size was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetSendBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize);
+
+/**
+ * @brief Sets the size of the receive buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize requested size for the buffer
+ * @return ARNETWORKAL_OK if the buffer size was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int bufferSize);
+
+/**
+ * @brief Gets the size of the send buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize Pointer which will hold the size of the buffer
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
+
+/**
+ * @brief Gets the size of the receive buffer
+ * @param manager pointer on the Manager
+ * @param bufferSize Pointer which will hold the size of the buffer
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
+
 #endif /** _ARNETWORKAL_WIFINETWORK_PRIVATE_H_ */
