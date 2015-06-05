@@ -1050,6 +1050,13 @@ static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_WifiNetwork
     else
     {
         ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error during ioctl %d (%s)", errno, strerror(errno));
+        if (errno == ENXIO)
+        {
+            // On iOS (and maybe other system), the ioctl(...TIOCOUTQ...) is not supported and fails with errno ENXIO
+            // In this case, we set the socket buffer size to -1 to avoid future calls to the ioctl
+            ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "ioctl failed with error ENXIO, stop trying to get available socket buffer size");
+            senderObject->socketBufferSize = -1;
+        }
     }
 
     return available;
