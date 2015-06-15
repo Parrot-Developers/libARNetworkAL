@@ -287,6 +287,6 @@ public class ARNetworkALManager
 
     public String getCId()
     {
-        return String.format("0x%x", m_managerPtr);
+        return String.format("0x%08x", m_managerPtr);
     }
 }
