@@ -102,7 +102,7 @@ ARNETWORKAL_Manager_t* ARNETWORKAL_Manager_New (eARNETWORKAL_ERROR *error)
     /** delete the Manager if an error occurred */
     if (localError != ARNETWORKAL_OK)
     {
-        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_MANAGER_TAG, "error: %d occurred \n", localError);
+        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_MANAGER_TAG, "[%p] error: %d occurred \n", manager, localError);
         ARNETWORKAL_Manager_Delete (&manager);
     }
 

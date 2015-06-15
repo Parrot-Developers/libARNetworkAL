@@ -106,21 +106,21 @@ typedef struct _ARNETWORKAL_WifiNetworkObject_
  * @param receiverObject wifi receiver object
  * @return 0 if is false and 1 in otherwise
  */
-static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(ARNETWORKAL_WifiNetworkObject *receiverObject);
+static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(ARNETWORKAL_Manager_t *manager, ARNETWORKAL_WifiNetworkObject *receiverObject);
 
 
 /**
  * @brief Flush the receive socket.
  * @param receiverObject wifi receiver object
  */
-static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject);
+static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_WifiNetworkObject *receiverObject);
 
 /**
  * @brief Gets the available size of the send buffer
  * @param senderObject wifi sender object
  * @return The size (in bytes) available in the send buffer (negative means that the size could not be computed)
  */
-static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_WifiNetworkObject *senderObject);
+static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_WifiNetworkObject *senderObject);
 
 /*****************************************
  *
@@ -496,7 +496,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
                 break;
 
             default:
-                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "connect fd=%d addr='%s' port=%d: error='%s'", sockfd, addr, port, strerror(errno));
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] connect fd=%d addr='%s' port=%d: error='%s'", manager, sockfd, addr, port, strerror(errno));
                 error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
@@ -568,7 +568,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
                 break;
 
             default:
-                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "bind fd=%d, addr='0.0.0.0', port=%d: error='%s'", wifiReceiver->socket, port, strerror(errno));
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] bind fd=%d, addr='0.0.0.0', port=%d: error='%s'", manager, wifiReceiver->socket, port, strerror(errno));
                 error = ARNETWORKAL_ERROR_WIFI;
                 break;
             }
@@ -591,7 +591,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
 
     if(result == ARNETWORKAL_MANAGER_RETURN_DEFAULT)
     {
-        int availableSpaceInSocket = ARNETWORKAL_WifiNetwork_GetAvailableSendSize (wifiSendObj);
+        int availableSpaceInSocket = ARNETWORKAL_WifiNetwork_GetAvailableSendSize (manager, wifiSendObj);
         if (availableSpaceInSocket < 0)
         {
             // We could not get the available size, accept the frame anyway
@@ -730,12 +730,12 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
             switch (errno)
             {
             case EAGAIN:
-                ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "Socket buffer full (errno = %d , %s)", errno, strerror(errno));
+                ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Socket buffer full (errno = %d , %s)", manager, errno, strerror(errno));
                 senderObject->size = 0;
                 senderObject->currentFrame = senderObject->buffer;
                 break;
             default:
-                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Socket send error (errno = %d , %s)", errno, strerror(errno));
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Socket send error (errno = %d , %s)", manager, errno, strerror(errno));
                 /* check the disconnection */
                 if (senderObject->isDisconnected == 0)
                 {
@@ -798,11 +798,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
         if (FD_ISSET(receiverObject->socket, &set))
         {
             /* If wifi network is too long without receive */
-            if ((receiverObject->recvIsFlushed == 0 ) && (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(receiverObject) != 0))
+            if ((receiverObject->recvIsFlushed == 0 ) && (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(manager, receiverObject) != 0))
             {
                 /* the data in the socket are too old*/
                 /* flush the socket  */
-                ARNETWORKAL_WifiNetwork_FlushReceiveSocket (receiverObject);
+                ARNETWORKAL_WifiNetwork_FlushReceiveSocket (manager, receiverObject);
             }
             else
             {
@@ -832,7 +832,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                 }
 
                 /* Check if the thread has not been stopped too long between ARSAL_Socket_Recv() and the save of the reception date. */
-                if (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(receiverObject) == 0)
+                if (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(manager, receiverObject) == 0)
                 {
                     /* save the date of the reception */
                     ARSAL_Time_GetTime(&(receiverObject->lastDataReceivedDate));
@@ -850,14 +850,14 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             if ((receiverObject->isDisconnected != 1) && (! FD_ISSET(receiverObject->fifo[0], &set)))
             {
                 /* check if the connection is lost */
-                if (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(receiverObject) != 0)
+                if (ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive(manager, receiverObject) != 0)
                 {
                     /* wifi disconnected */
                     receiverObject->isDisconnected = 1;
 
                     if ((receiverObject->onDisconnect != NULL) && ((senderObject == NULL) || (senderObject->isDisconnected == 0)))
                     {
-                        ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "connection lost (too long time without reception)");
+                        ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "[%p] connection lost (too long time without reception)", manager);
 
                         /* Disconnect callback */
                         receiverObject->onDisconnect (manager, receiverObject->onDisconnectCustomData);
@@ -935,11 +935,18 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetSendBufferSize(ARNETWORKAL_Manager
     int err = ARSAL_Socket_Setsockopt (senderObject->socket, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize));
     if (err == 0)
     {
-        // The kernel doubles the requested value (see socket(7) manual page for more information)
-        senderObject->socketBufferSize = 2*bufferSize;
+        eARNETWORKAL_ERROR getErr = ARNETWORKAL_WifiNetwork_GetSendBufferSize(manager, &(senderObject->socketBufferSize));
+        if (getErr != ARNETWORKAL_OK)
+        {
+            ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Unable to get back send socket buffer size, using set-value", manager);
+            // The kernel doubles the requested value (see socket(7) manual page for more information)
+            senderObject->socketBufferSize = 2*bufferSize;
+        }
+        ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Setting send socket size to %d, actual size is %d", manager, bufferSize, senderObject->socketBufferSize);
     }
     else
     {
+        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error while setting send socket buffer size", manager);
         error = ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT;
     }
     return error;
@@ -952,11 +959,18 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvBufferSize(ARNETWORKAL_Manager
     int err = ARSAL_Socket_Setsockopt (receiverObject->socket, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize));
     if (err == 0)
     {
-        // The kernel doubles the requested value (see socket(7) manual page for more information)
-        receiverObject->socketBufferSize = 2*bufferSize;
+        eARNETWORKAL_ERROR getErr = ARNETWORKAL_WifiNetwork_GetRecvBufferSize(manager, &(receiverObject->socketBufferSize));
+        if (getErr != ARNETWORKAL_OK)
+        {
+            ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Unable to get back recv socket buffer size, using set-value", manager);
+            // The kernel doubles the requested value (see socket(7) manual page for more information)
+            receiverObject->socketBufferSize = 2*bufferSize;
+        }
+        ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Setting recv socket size to %d, actual size is %d", manager, bufferSize, receiverObject->socketBufferSize);
     }
     else
     {
+        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error while setting recv socket buffer size", manager);
         error = ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT;
     }
     return error;
@@ -989,7 +1003,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager
  *
  *****************************************/
 
-static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_WifiNetworkObject *receiverObject)
+static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_WifiNetworkObject *receiverObject)
 {
     /* -- Check if the wifi network is stay too long without receive. -- */
 
@@ -1021,14 +1035,14 @@ static uint8_t ARNETWORKAL_WifiNetwork_IsTooLongWithoutReceive (ARNETWORKAL_Wifi
 
     if(error != ARNETWORKAL_OK)
     {
-        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error occurred : %s", ARNETWORKAL_Error_ToString (error));
+        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error occurred : %s", manager, ARNETWORKAL_Error_ToString (error));
     }
     /* No else: no error to print */
 
     return isTooLongWithoutReceive;
 }
 
-static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkObject *receiverObject)
+static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_WifiNetworkObject *receiverObject)
 {
     /* -- flush the receive socket -- */
 
@@ -1064,7 +1078,7 @@ static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkO
                     break;
 
                 default:
-                    ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "%s: error = %d", __func__, errno);
+                    ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] error = %d (%s)", manager, errno, strerror(errno));
                     error = ARNETWORKAL_ERROR_WIFI;
                     break;
                 }
@@ -1076,12 +1090,12 @@ static void ARNETWORKAL_WifiNetwork_FlushReceiveSocket (ARNETWORKAL_WifiNetworkO
 
     if(error != ARNETWORKAL_OK)
     {
-        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error occurred : %s", ARNETWORKAL_Error_ToString (error));
+        ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error occurred : %s", manager, ARNETWORKAL_Error_ToString (error));
     }
     /* No else: no error to print */
 }
 
-static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_WifiNetworkObject *senderObject)
+static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_Manager_t *manager, ARNETWORKAL_WifiNetworkObject *senderObject)
 {
     int currentBytesInSocket;
     int err;
@@ -1099,17 +1113,17 @@ static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_WifiNetwork
         available = buffSize - currentBytesInSocket;
         if (available < 0)
         {
-            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Available size %d < 0 ! (buff = %d, current = %d)", available, buffSize, currentBytesInSocket);
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Available size %d < 0 ! (buff = %d, current = %d)", manager, available, buffSize, currentBytesInSocket);
         }
     }
     else
     {
-        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "Error during ioctl %d (%s)", errno, strerror(errno));
+        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error during ioctl %d (%s)", manager, errno, strerror(errno));
         if (errno == ENXIO)
         {
             // On iOS (and maybe other system), the ioctl(...TIOCOUTQ...) is not supported and fails with errno ENXIO
             // In this case, we set the socket buffer size to -1 to avoid future calls to the ioctl
-            ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "ioctl failed with error ENXIO, stop trying to get available socket buffer size");
+            ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "[%p] ioctl failed with error ENXIO, stop trying to get available socket buffer size", manager);
             senderObject->socketBufferSize = -1;
         }
     }

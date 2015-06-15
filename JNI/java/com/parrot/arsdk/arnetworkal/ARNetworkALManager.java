@@ -284,4 +284,9 @@ public class ARNetworkALManager
         
         return error;
     }
+
+    public String getCId()
+    {
+        return String.format("0x%x", m_managerPtr);
+    }
 }
