@@ -939,8 +939,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetSendBufferSize(ARNETWORKAL_Manager
         if (getErr != ARNETWORKAL_OK)
         {
             ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Unable to get back send socket buffer size, using set-value", manager);
-            // The kernel doubles the requested value (see socket(7) manual page for more information)
-            senderObject->socketBufferSize = 2*bufferSize;
+            senderObject->socketBufferSize = bufferSize;
         }
         ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Setting send socket size to %d, actual size is %d", manager, bufferSize, senderObject->socketBufferSize);
     }
@@ -963,8 +962,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvBufferSize(ARNETWORKAL_Manager
         if (getErr != ARNETWORKAL_OK)
         {
             ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Unable to get back recv socket buffer size, using set-value", manager);
-            // The kernel doubles the requested value (see socket(7) manual page for more information)
-            receiverObject->socketBufferSize = 2*bufferSize;
+            receiverObject->socketBufferSize = bufferSize;
         }
         ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Setting recv socket size to %d, actual size is %d", manager, bufferSize, receiverObject->socketBufferSize);
     }
@@ -982,6 +980,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendBufferSize(ARNETWORKAL_Manager
     int size = sizeof(*bufferSize);
     ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
     int err = ARSAL_Socket_Getsockopt (senderObject->socket, SOL_SOCKET, SO_SNDBUF, bufferSize, &size);
+    // The kernel doubles the size we put on setsockopt, so we divide by two to get the usable size
+    *bufferSize /= 2;
     eARNETWORKAL_ERROR error = (err == 0) ? ARNETWORKAL_OK : ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT;
     return error;
 }
@@ -992,6 +992,8 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager
     int size = sizeof(*bufferSize);
     ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
     int err = ARSAL_Socket_Getsockopt (receiverObject->socket, SOL_SOCKET, SO_RCVBUF, bufferSize, &size);
+    // The kernel doubles the size we put on setsockopt, so we divide by two to get the usable size
+    *bufferSize /= 2;
     eARNETWORKAL_ERROR error = (err == 0) ? ARNETWORKAL_OK : ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT;
     return error;
 }
@@ -1113,7 +1115,8 @@ static int ARNETWORKAL_WifiNetwork_GetAvailableSendSize (ARNETWORKAL_Manager_t *
         available = buffSize - currentBytesInSocket;
         if (available < 0)
         {
-            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Available size %d < 0 ! (buff = %d, current = %d)", manager, available, buffSize, currentBytesInSocket);
+            ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Available size %d < 0 ! (buff = %d, current = %d)", manager, available, buffSize, currentBytesInSocket);
+            available = 0; // Set to 0 so we will refuse the data
         }
     }
     else
