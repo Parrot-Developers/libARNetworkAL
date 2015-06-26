@@ -474,7 +474,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
 
         /* get the socket buffer size */
         int bufferSize;
-        int size = sizeof (bufferSize);
+        socklen_t size = sizeof (bufferSize);
         ARSAL_Socket_Getsockopt (sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&bufferSize, &size);
         wifiSender->socketBufferSize = bufferSize;
 
@@ -977,7 +977,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvBufferSize(ARNETWORKAL_Manager
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize)
 {
     if (bufferSize == NULL) { return ARNETWORKAL_ERROR_BAD_PARAMETER; }
-    int size = sizeof(*bufferSize);
+    socklen_t size = sizeof(*bufferSize);
     ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
     int err = ARSAL_Socket_Getsockopt (senderObject->socket, SOL_SOCKET, SO_SNDBUF, bufferSize, &size);
     // The kernel doubles the size we put on setsockopt, so we divide by two to get the usable size
@@ -989,7 +989,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendBufferSize(ARNETWORKAL_Manager
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize)
 {
     if (bufferSize == NULL) { return ARNETWORKAL_ERROR_BAD_PARAMETER; }
-    int size = sizeof(*bufferSize);
+    socklen_t size = sizeof(*bufferSize);
     ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
     int err = ARSAL_Socket_Getsockopt (receiverObject->socket, SOL_SOCKET, SO_RCVBUF, bufferSize, &size);
     // The kernel doubles the size we put on setsockopt, so we divide by two to get the usable size
