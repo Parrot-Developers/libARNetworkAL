@@ -62,8 +62,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     public final static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_RFCOMM_WRITE = "fe01";
     public final static String ARNETWORKAL_BLENETWORK_PARROT_CHARACTERISTIC_PREFIX_UUID_RFCOMM_READ = "fe02";
     
-    private static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
-    private static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
+    public static int ARNETWORKAL_BLENETWORK_MEDIA_MTU = 0;
+    public static int ARNETWORKAL_BLENETWORK_HEADER_SIZE = 0;
     
     private static int ARNETWORKAL_BLENETWORK_BW_PROGRESS_EACH_SEC = 1;
     private static int ARNETWORKAL_BLENETWORK_BW_NB_ELEMS = 10;
