@@ -13,7 +13,7 @@ HEADER_FILES                                        =   ../Includes/libARNetwork
 SOURCE_FILES                                        =   $(HEADER_FILES)                                     \
                                                         ../Sources/Wifi/ARNETWORKAL_WifiNetwork.c           \
                                                         ../Sources/ARNETWORKAL_Manager.c                    \
-                                                        ../Sources/ARNETWORKAL_Error.c
+                                                        ../gen/Sources/ARNETWORKAL_Error.c
 
 if HAVE_COREBLUETOOTH
 SOURCE_FILES                                        +=  ../Sources/BLE/ARNETWORKAL_BLENetwork.m             
