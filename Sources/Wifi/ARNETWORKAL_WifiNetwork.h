@@ -38,7 +38,16 @@
 #ifndef _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 #define _ARNETWORKAL_WIFINETWORK_PRIVATE_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_NETINET_IP_H
 #include <netinet/ip.h>
+#else
+/* define a default common value */
+#define IP_MAXPACKET 65535
+#endif
 
 #include <libARNetworkAL/ARNETWORKAL_Manager.h>
 
