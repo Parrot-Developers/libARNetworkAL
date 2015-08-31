@@ -869,8 +869,8 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
         if (FD_ISSET(receiverObject->fifo[0], &set))
         {
             // If the fifo is ready for a read, dump bytes from it (so it won't be ready next time)
-            char dump[10];
-            read (receiverObject->fifo[0], &dump, 10);
+            char dump[1];
+            read (receiverObject->fifo[0], &dump, 1);
         }
     }
 
