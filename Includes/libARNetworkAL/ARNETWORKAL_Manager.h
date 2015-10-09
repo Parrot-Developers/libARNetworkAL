@@ -366,4 +366,17 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_EnableDataDump(ARNETWORKAL_Manager_t *manager, const char *logDir, const char *name);
 
+/**
+ * @brief Adds a data to the dumpfile.
+ * This is a no-op if ARNETWORKAL_Manager_EnableDataDump was not called (or raised an error).
+ * @param manager pointer on the Manager.
+ * @param tag 1-byte identifier of data (values under 0x20 are reserved).
+ * @param data data buffer.
+ * @param size size of the data.
+ * @param sizeDump size of the data to actually dump. 0 to dump everything.
+ * @param ts timestamp of data. NULL to use current time
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_DumpData(ARNETWORKAL_Manager_t *manager, uint8_t tag, const void *data, size_t size, size_t sizeDump, const struct timespec *ts);
+
 #endif /** _ARNETWORKAL_MANAGER_H_ */

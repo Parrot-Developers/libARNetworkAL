@@ -497,3 +497,18 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_EnableDataDump(ARNETWORKAL_Manager_t *man
     }
     return error;
 }
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_DumpData(ARNETWORKAL_Manager_t *manager, uint8_t tag, const void *data, size_t size, size_t sizeDump, const struct timespec *ts)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    if (manager == NULL || data == NULL || manager->dumpFile == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else
+    {
+        ARSAL_Print_DumpData(manager->dumpFile, tag, data, size, sizeDump, ts);
+    }
+    return error;
+}

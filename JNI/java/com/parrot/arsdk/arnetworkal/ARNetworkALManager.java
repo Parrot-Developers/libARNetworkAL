@@ -67,6 +67,7 @@ public class ARNetworkALManager
     private native int nativeSetRecvBufferSize(long jManager, int bufferSize);
 
     private native int nativeEnableDataDump(long jManager, String jLogDir, String jName);
+    private native int nativeDumpData(long jManager, byte tag, long nativeData, int datasize, int dumpsize);
 
     private long m_managerPtr;
     private boolean m_initOk;
@@ -205,6 +206,28 @@ public class ARNetworkALManager
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
         int intError = nativeEnableDataDump(m_managerPtr, logDir, name);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
+     * Dump some data
+     */
+    public ARNETWORKAL_ERROR_ENUM dumpData(ARNativeData data, byte tag)
+    {
+        int size = data.getDataSize();
+        return dumpData(data, size, tag);
+    }
+
+    /**
+     * Dump some data, with the given maximum size
+     */
+    public ARNETWORKAL_ERROR_ENUM dumpData(ARNativeData data, int maxSize, byte tag)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int totalsize = data.getDataSize();
+        int dumpsize = maxSize < totalsize ? maxSize : totalsize;
+        int intError = nativeDumpData(m_managerPtr, tag, data.getData(), totalsize, dumpsize);
         error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }

@@ -374,3 +374,12 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeEnableDataDump(JNIEnv
     (*env)->ReleaseStringUTFChars( env, jName, nativeName );
     return error;
 }
+
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeDumpData(JNIEnv *env, jobject obj, jlong jManager, jbyte tag, jlong nativeData, jint datasize, jint dumpsize)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *)(intptr_t) jManager;
+    uint8_t *data = (uint8_t *)(intptr_t)nativeData;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_DumpData(manager, tag, data, datasize, dumpsize, NULL);
+    return error;
+}
