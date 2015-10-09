@@ -184,7 +184,7 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitWifiNetwork(JNIEn
 
     /** local declarations */
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
-    const char *nativeString = (*env)->GetStringUTFChars(env, jaddr, 0);
+    const char *nativeString = (*env)->GetStringUTFChars(env, jaddr, NULL);
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
 
     error = ARNETWORKAL_Manager_InitWifiNetwork(manager, nativeString, sendingPort, recvPort, recvTimeoutSec);
@@ -360,5 +360,17 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetRecvBufferSize(JNI
 {
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
     eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetRecvBufferSize(manager, (int)size);
+    return error;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeEnableDataDump(JNIEnv *env, jobject obj, jlong jManager, jstring jLogDir, jstring jName)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    const char *nativeLogDir = (*env)->GetStringUTFChars(env, jLogDir, NULL);
+    const char *nativeName = (*env)->GetStringUTFChars(env, jName, NULL);
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_EnableDataDump(manager, nativeLogDir, nativeName);
+    (*env)->ReleaseStringUTFChars( env, jLogDir, nativeLogDir );
+    (*env)->ReleaseStringUTFChars( env, jName, nativeName );
     return error;
 }

@@ -633,6 +633,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
         memcpy (wifiSendObj->currentFrame, frame->dataPtr, dataSize);
         wifiSendObj->currentFrame += dataSize;
         wifiSendObj->size += dataSize;
+
+        if (manager->dumpFile != NULL)
+        {
+            ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_FRAME_PUSHED, wifiSendObj->currentFrame - frame->size, frame->size, 0, NULL);
+        }
     }
 
     return result;
@@ -692,6 +697,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager
     {
         /** offset the readingPointer on the next frame */
         wifiRecvObj->currentFrame = wifiRecvObj->currentFrame + frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
+
+        if (manager->dumpFile != NULL)
+        {
+            ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_FRAME_POPPED, wifiRecvObj->currentFrame - frame->size, frame->size, 0, NULL);
+        }
     }
     else
     {
@@ -721,6 +731,10 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
         ssize_t bytes = ARSAL_Socket_Send(senderObject->socket, senderObject->buffer, senderObject->size, 0);
         if(bytes > -1)
         {
+            if (manager->dumpFile != NULL)
+            {
+                ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_DATA_SENT, senderObject->buffer, senderObject->size, 0, NULL);
+            }
             senderObject->size = 0;
             senderObject->currentFrame = senderObject->buffer;
             senderObject->bw_current += bytes;
@@ -824,6 +838,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                     // Save the number of bytes read
                     receiverObject->size = size;
                     receiverObject->bw_current += size;
+
+                    if (manager->dumpFile != NULL)
+                    {
+                        ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_DATA_RECEIVED, receiverObject->buffer, receiverObject->size, 0, NULL);
+                    }
 
                     /* Data received reset the reception flush state */
                     receiverObject->recvIsFlushed = 0;

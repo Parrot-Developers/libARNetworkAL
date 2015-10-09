@@ -66,6 +66,8 @@ public class ARNetworkALManager
     private native int nativeSetSendBufferSize(long jManager, int bufferSize);
     private native int nativeSetRecvBufferSize(long jManager, int bufferSize);
 
+    private native int nativeEnableDataDump(long jManager, String jLogDir, String jName);
+
     private long m_managerPtr;
     private boolean m_initOk;
 
@@ -195,7 +197,18 @@ public class ARNetworkALManager
         error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }
-    
+
+    /**
+     * Enable data dump
+     */
+    public ARNETWORKAL_ERROR_ENUM enableDataDump(String logDir, String name)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeEnableDataDump(m_managerPtr, logDir, name);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
     /**
      * Initialize BLE network to send and receive data
      */

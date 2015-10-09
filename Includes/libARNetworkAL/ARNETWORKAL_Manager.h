@@ -38,6 +38,7 @@
 #ifndef _ARNETWORKAL_MANAGER_H_
 #define _ARNETWORKAL_MANAGER_H_
 
+#include <stdio.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
 
@@ -213,6 +214,8 @@ struct ARNETWORKAL_Manager_t
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
     unsigned int maxBufferSize; /**< Maximum size allowed for a buffer (size available for data). */
+
+    FILE *dumpFile; /**< Output file for dumping traffic */
 };
 
 /**
@@ -353,5 +356,14 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetSendBufferSize(ARNETWORKAL_Manager_t *
  * @return see ::eARNETWORKAL_ERROR
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
+
+/**
+ * @brief Enables dump of data pushed/sent/received/popped.
+ * @param manager pointer on the Manager
+ * @param logDir directory where to save data dump. It musts exists otherwize dump will not be enabled
+ * @param name name to give to the log. A rotation (up to 4 files) will be done if name already exists.
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_EnableDataDump(ARNETWORKAL_Manager_t *manager, const char *logDir, const char *name);
 
 #endif /** _ARNETWORKAL_MANAGER_H_ */
