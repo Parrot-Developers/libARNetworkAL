@@ -39,6 +39,7 @@
 #define _ARNETWORKAL_MANAGER_H_
 
 #include <stdio.h>
+#include <time.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
 
