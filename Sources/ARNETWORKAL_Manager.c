@@ -479,6 +479,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_EnableDataDump(ARNETWORKAL_Manager_t *man
     }
     else if (stat (logDir, &st) < 0)
     {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
         ARSAL_PRINT (ARSAL_PRINT_INFO, ARNETWORKAL_MANAGER_TAG, "[%p] Disabling dump directory '%s' unavailable", manager, logDir);
     }
     else
