@@ -633,6 +633,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
         memcpy (wifiSendObj->currentFrame, frame->dataPtr, dataSize);
         wifiSendObj->currentFrame += dataSize;
         wifiSendObj->size += dataSize;
+
+        if (manager->dumpFile != NULL)
+        {
+            ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_FRAME_PUSHED, wifiSendObj->currentFrame - frame->size, frame->size, 0, NULL);
+        }
     }
 
     return result;
@@ -692,6 +697,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PopFrame(ARNETWORKAL_Manager
     {
         /** offset the readingPointer on the next frame */
         wifiRecvObj->currentFrame = wifiRecvObj->currentFrame + frame->size - offsetof (ARNETWORKAL_Frame_t, dataPtr);
+
+        if (manager->dumpFile != NULL)
+        {
+            ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_FRAME_POPPED, wifiRecvObj->currentFrame - frame->size, frame->size, 0, NULL);
+        }
     }
     else
     {
@@ -721,6 +731,10 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Send(ARNETWORKAL_Manager_t *
         ssize_t bytes = ARSAL_Socket_Send(senderObject->socket, senderObject->buffer, senderObject->size, 0);
         if(bytes > -1)
         {
+            if (manager->dumpFile != NULL)
+            {
+                ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_DATA_SENT, senderObject->buffer, senderObject->size, 0, NULL);
+            }
             senderObject->size = 0;
             senderObject->currentFrame = senderObject->buffer;
             senderObject->bw_current += bytes;
@@ -770,9 +784,13 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
 
     // Create a fd_set to select on both the socket and the "cancel" pipe
     fd_set set;
+    fd_set exceptSet;
     FD_ZERO (&set);
     FD_SET (receiverObject->socket, &set);
     FD_SET (receiverObject->fifo[0], &set);
+    FD_ZERO (&exceptSet);
+    FD_SET (receiverObject->socket, &exceptSet);
+    FD_SET (receiverObject->fifo[0], &exceptSet);
     // Get the max fd +1 for select call
     int maxFd = (receiverObject->socket > receiverObject->fifo[0]) ? receiverObject->socket +1 : receiverObject->fifo[0] +1;
     // Create the timeout object
@@ -785,12 +803,19 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
     }
 
     // Wait for either file to be reading for a read
-    int err = select (maxFd, &set, NULL, NULL, &tv);
+    int err = select (maxFd, &set, NULL, &exceptSet, &tv);
+
+    if (FD_ISSET(receiverObject->socket, &exceptSet))
+    {
+        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "FOUND SOCKET ERROR FD_ISSET(except) %d", FD_ISSET(receiverObject->socket, &exceptSet));
+    }
     if (err < 0)
     {
         // Read error
         result = ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
         receiverObject->size = 0;
+
+        ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "select ERROR err %d", err);
     }
     else
     {
@@ -813,6 +838,11 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
                     // Save the number of bytes read
                     receiverObject->size = size;
                     receiverObject->bw_current += size;
+
+                    if (manager->dumpFile != NULL)
+                    {
+                        ARSAL_Print_DumpData (manager->dumpFile, ARNETWORKAL_DUMP_TAG_DATA_RECEIVED, receiverObject->buffer, receiverObject->size, 0, NULL);
+                    }
 
                     /* Data received reset the reception flush state */
                     receiverObject->recvIsFlushed = 0;

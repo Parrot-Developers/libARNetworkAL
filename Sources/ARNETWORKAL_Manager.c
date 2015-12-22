@@ -47,6 +47,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include <libARSAL/ARSAL_Print.h>
 
@@ -306,6 +307,12 @@ void ARNETWORKAL_Manager_Delete (ARNETWORKAL_Manager_t **manager)
     {
         if ((*manager) != NULL)
         {
+            if ((*manager)->dumpFile != NULL)
+            {
+                fflush ((*manager)->dumpFile);
+                fsync (fileno ((*manager)->dumpFile));
+                fclose ((*manager)->dumpFile);
+            }
             free (*manager);
             (*manager) = NULL;
         }
@@ -452,6 +459,57 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *
     else
     {
         error = manager->getRecvBufferSize(manager, bufferSize);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_EnableDataDump(ARNETWORKAL_Manager_t *manager, const char *logDir, const char *name)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    char logPath[512] = "";
+    struct stat st;
+
+    if (manager == NULL || logDir == NULL || name == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->dumpFile != NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (stat (logDir, &st) < 0)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+        ARSAL_PRINT (ARSAL_PRINT_INFO, ARNETWORKAL_MANAGER_TAG, "[%p] Disabling dump directory '%s' unavailable", manager, logDir);
+    }
+    else
+    {
+        snprintf (logPath, sizeof(logPath), "%s/arnetworkal-%s.log", logDir, name);
+        ARSAL_Print_DumpRotateFiles(logPath, 4);
+        manager->dumpFile = fopen (logPath, "wb");
+        if (manager->dumpFile == NULL)
+        {
+            ARSAL_PRINT (ARSAL_PRINT_ERROR, ARNETWORKAL_MANAGER_TAG, "[%p] Unable to create dump file '%s'", manager, logPath);
+        }
+        else
+        {
+            ARSAL_PRINT (ARSAL_PRINT_INFO, ARNETWORKAL_MANAGER_TAG, "[%p] Dump enabled in file '%s'", manager, logPath);
+        }
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_DumpData(ARNETWORKAL_Manager_t *manager, uint8_t tag, const void *data, size_t size, size_t sizeDump, const struct timespec *ts)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    if (manager == NULL || data == NULL || manager->dumpFile == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else
+    {
+        ARSAL_Print_DumpData(manager->dumpFile, tag, data, size, sizeDump, ts);
     }
     return error;
 }
