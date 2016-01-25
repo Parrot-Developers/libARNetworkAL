@@ -2,49 +2,34 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_CATEGORY_PATH := dragon/libs
 LOCAL_MODULE := libARNetworkAL
 LOCAL_DESCRIPTION := ARSDK Network Control Library for Specific OS
+LOCAL_CATEGORY_PATH := dragon/libs
 
-LOCAL_LIBRARIES := ARSDKBuildUtils libARSAL
-LOCAL_EXPORT_LDLIBS := -larnetworkal
+LOCAL_MODULE_FILENAME := libarnetworkal.so
 
-# Copy in build dir so bootstrap files are generated in build dir
-LOCAL_AUTOTOOLS_COPY_TO_BUILD_DIR := 1
+LOCAL_LIBRARIES := libARSAL
 
-# Configure script is not at the root
-LOCAL_AUTOTOOLS_CONFIGURE_SCRIPT := Build/configure
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH)/Includes \
+	$(LOCAL_PATH)/Sources
 
-#Autotools variables
-LOCAL_AUTOTOOLS_CONFIGURE_ARGS := \
-	--with-libARSALInstallDir=""
+LOCAL_SRC_FILES := \
+	Sources/ARNETWORKAL_Manager.c \
+	Sources/Wifi/ARNETWORKAL_WifiNetwork.c \
+	gen/Sources/ARNETWORKAL_Error.c
 
-ifeq ("$(TARGET_OS_FLAVOUR)","android")
+LOCAL_INSTALL_HEADERS := \
+	Includes/libARNetworkAL/ARNetworkAL.h:usr/include/libARNetworkAL/ \
+	Includes/libARNetworkAL/ARNETWORKAL_Error.h:usr/include/libARNetworkAL/ \
+	Includes/libARNetworkAL/ARNETWORKAL_Frame.h:usr/include/libARNetworkAL/ \
+	Includes/libARNetworkAL/ARNETWORKAL_Manager.h:usr/include/libARNetworkAL/
 
-LOCAL_AUTOTOOLS_CONFIGURE_ARGS += \
-	--disable-static \
-	--enable-shared \
-	--disable-so-version
-
-# Temporary fix to Android build on Mac
-LOCAL_AUTOTOOLS_CONFIGURE_ENV := \
-	ac_cv_objc_compiler_gnu=no
-
-else ifneq ($(filter iphoneos iphonesimulator, $(TARGET_OS_FLAVOUR)),)
-
-LOCAL_AUTOTOOLS_CONFIGURE_ARGS += \
-	--enable-static \
-	--disable-shared \
-	OBJCFLAGS=" -x objective-c -fobjc-arc -std=gnu99 $(TARGET_GLOBAL_CFLAGS)" \
-	OBJC="$(TARGET_CC)" \
-	CFLAGS=" -std=gnu99 -x c $(TARGET_GLOBAL_CFLAGS)"
-
+ifeq ("$(TARGET_OS)","darwin")
+ifneq ("$(TARGET_OS_FLAVOUR)","native")
+LOCAL_SRC_FILES += \
+	Sources/BLE/ARNETWORKAL_BLENetwork.m
+endif
 endif
 
-# User define command to be launch before configure step.
-# Generates files used by configure
-define LOCAL_AUTOTOOLS_CMD_POST_UNPACK
-	$(Q) cd $(PRIVATE_SRC_DIR)/Build && ./bootstrap
-endef
-
-include $(BUILD_AUTOTOOLS)
+include $(BUILD_LIBRARY)
