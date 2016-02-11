@@ -37,6 +37,7 @@ import android.content.pm.PackageManager;
 
 import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSALBLEManager;
+import com.parrot.mux.Mux;
 
 /**
  * Network manager allow to send and receive on network.
@@ -62,6 +63,9 @@ public class ARNetworkALManager
     private native int nativeInitBLENetwork(long jManager, Object jContext, BluetoothDevice jdevice, int recvTimeoutSec, int[] notificationIDArray);
     private native int nativeCloseBLENetwork(long jManager);
     private native int nativeCancelBLENetwork(long jManager);
+
+    private native int nativeInitMuxNetwork(long jManager, long jMux);
+    private native int nativeCloseMuxNetwork(long jManager);
 
     private native int nativeSetSendBufferSize(long jManager, int bufferSize);
     private native int nativeSetRecvBufferSize(long jManager, int bufferSize);
@@ -318,6 +322,33 @@ public class ARNetworkALManager
             error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
         
+        return error;
+    }
+
+    /**
+     * Initialise Mux network
+     */
+    public ARNETWORKAL_ERROR_ENUM initMuxNetwork(Mux mux)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        if(mux != null)
+        {
+            Mux.Ref muxref = mux.newMuxRef();
+            int intError = nativeInitMuxNetwork(m_managerPtr, muxref.getCPtr());
+            muxref.release();
+            error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        }
+        return error;
+    }
+
+    /**
+     * Close Mux network
+     */
+    public ARNETWORKAL_ERROR_ENUM closeMuxNetwork()
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeCloseMuxNetwork(m_managerPtr);
+        error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }
 

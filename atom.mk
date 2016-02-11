@@ -9,6 +9,9 @@ LOCAL_CATEGORY_PATH := dragon/libs
 LOCAL_MODULE_FILENAME := libarnetworkal.so
 
 LOCAL_LIBRARIES := libARSAL
+LOCAL_CONDITIONAL_LIBRARIES := \
+	OPTIONAL:libmux \
+	OPTIONAL:libpomp
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/Includes \
@@ -20,6 +23,7 @@ LOCAL_CFLAGS := \
 LOCAL_SRC_FILES := \
 	Sources/ARNETWORKAL_Manager.c \
 	Sources/Wifi/ARNETWORKAL_WifiNetwork.c \
+	Sources/Mux/ARNETWORKAL_MuxNetwork.c \
 	gen/Sources/ARNETWORKAL_Error.c
 
 LOCAL_INSTALL_HEADERS := \
