@@ -111,7 +111,6 @@ const char* ARNETWORKAL_Error_ToString (eARNETWORKAL_ERROR error)
         return "BLE stack generic error";
         break;
     default:
-        return "Unknown value";
         break;
     }
     return "Unknown value";
