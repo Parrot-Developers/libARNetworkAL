@@ -54,7 +54,8 @@ typedef struct _ARNETWORKAL_MuxNetworkObject_ {
 	struct pomp_buffer  *rxbuf_pop;
 	struct mux_queue    *rxqueue;
 	ARNETWORKAL_Manager_OnDisconnect_t  onDisconnect;
-	void                                *onDisconnectCustomData;
+	void                *onDisconnectCustomData;
+	int                 disconnected;
 } ARNETWORKAL_MuxNetworkObject;
 
 /**
@@ -112,9 +113,13 @@ static eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_MuxNetwork_PushFrame(
 				ARNETWORKAL_MUXNETWORK_CHANID,
 				res, strerror(-res));
 
-		/* disconnect from mux */
-		if (obj->onDisconnect)
-			obj->onDisconnect(manager, obj->onDisconnectCustomData);
+		/* Notify disconnection if not already done */
+		if (!obj->disconnected) {
+			obj->disconnected = 1;
+			if (obj->onDisconnect)
+				obj->onDisconnect(manager,
+						obj->onDisconnectCustomData);
+		}
 		goto out;
 	}
 
@@ -220,8 +225,14 @@ static eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_MuxNetwork_Receive(
 	if (res == -EPIPE) {
 		/* Queue is being destroyed, we should not use it anymore */
 		obj->rxqueue = NULL;
-		if (obj->onDisconnect != NULL)
-			obj->onDisconnect(manager, obj->onDisconnectCustomData);
+
+		/* Notify disconnection if not already done */
+		if (!obj->disconnected) {
+			obj->disconnected = 1;
+			if (obj->onDisconnect)
+				obj->onDisconnect(manager,
+						obj->onDisconnectCustomData);
+		}
 		return ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
 	} else if (res < 0) {
 		ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_MUXNETWORK_TAG,
