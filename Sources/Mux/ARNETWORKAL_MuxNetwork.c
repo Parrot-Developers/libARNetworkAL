@@ -48,6 +48,8 @@
 #define ARNETWORKAL_MUXNETWORK_TAG     "ARNETWORKAL_MuxNetwork"
 #define ARNETWORKAL_MUXNETWORK_CHANID  1
 
+#define ARNETWORKAL_MUXNETWORK_TIMEOUT_SEC 3
+
 typedef struct _ARNETWORKAL_MuxNetworkObject_ {
 	struct mux_ctx      *ctx;
 	struct pomp_buffer  *rxbuf_recv;
@@ -206,6 +208,10 @@ static eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_MuxNetwork_Receive(
 {
 	int res = 0;
 	ARNETWORKAL_MuxNetworkObject *obj = manager->receiverObject;
+	struct timespec timeout = {
+		.tv_sec = ARNETWORKAL_MUXNETWORK_TIMEOUT_SEC,
+		.tv_nsec = 0,
+	};
 
 	/* Release previous buffer if any */
 	if (obj->rxbuf_recv != NULL)
@@ -221,8 +227,12 @@ static eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_MuxNetwork_Receive(
 		return ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
 
 	/* Wait for next buffer */
-	res = mux_queue_get_buf(obj->rxqueue, &obj->rxbuf_recv);
-	if (res == -EPIPE) {
+	res = mux_queue_timed_get_buf(obj->rxqueue, &obj->rxbuf_recv, &timeout);
+	if ((res == -EPIPE) || (res == -ETIMEDOUT)) {
+		ARSAL_PRINT(ARSAL_PRINT_INFO, ARNETWORKAL_MUXNETWORK_TAG,
+			    "mux_queue_timed_get_buf(chanid=%u) returned %s.",
+			    ARNETWORKAL_MUXNETWORK_CHANID,
+			    (res == -EPIPE) ? "EPIPE" : "ETIMEDOUT");
 		/* Queue is being destroyed, we should not use it anymore */
 		obj->rxqueue = NULL;
 
@@ -236,9 +246,9 @@ static eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_MuxNetwork_Receive(
 		return ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
 	} else if (res < 0) {
 		ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_MUXNETWORK_TAG,
-				"mux_queue_get_buf(chanid=%u): err=%d(%s)",
-				ARNETWORKAL_MUXNETWORK_CHANID,
-				res, strerror(-res));
+			    "mux_queue_timed_get_buf(chanid=%u): err=%d(%s)",
+			    ARNETWORKAL_MUXNETWORK_CHANID,
+			    res, strerror(-res));
 		return ARNETWORKAL_MANAGER_RETURN_NETWORK_ERROR;
 	}
 
