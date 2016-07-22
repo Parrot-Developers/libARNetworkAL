@@ -582,7 +582,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
 {
     eARNETWORKAL_MANAGER_RETURN result = ARNETWORKAL_MANAGER_RETURN_DEFAULT;
     ARNETWORKAL_WifiNetworkObject *wifiSendObj = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
-    int nextSize = wifiSendObj->size + frame->size;
+    uint32_t nextSize = wifiSendObj->size + frame->size;
 
     if(nextSize > ARNETWORKAL_WIFINETWORK_SENDING_BUFFER_SIZE)
     {
@@ -596,7 +596,7 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_PushFrame(ARNETWORKAL_Manage
         {
             // We could not get the available size, accept the frame anyway
         }
-        else if (availableSpaceInSocket < nextSize)
+        else if (((uint32_t)availableSpaceInSocket) < nextSize)
         {
             // The available size is too small for the frame
             result = ARNETWORKAL_MANAGER_RETURN_BUFFER_FULL;

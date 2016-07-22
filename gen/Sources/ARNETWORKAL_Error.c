@@ -40,7 +40,7 @@
 
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 
-char* ARNETWORKAL_Error_ToString (eARNETWORKAL_ERROR error)
+const char* ARNETWORKAL_Error_ToString (eARNETWORKAL_ERROR error)
 {
     switch (error)
     {
@@ -111,7 +111,6 @@ char* ARNETWORKAL_Error_ToString (eARNETWORKAL_ERROR error)
         return "BLE stack generic error";
         break;
     default:
-        return "Unknown value";
         break;
     }
     return "Unknown value";
