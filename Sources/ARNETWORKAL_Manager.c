@@ -160,6 +160,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitWifiNetwork (ARNETWORKAL_Manager_t *m
         manager->getRecvBufferSize = ARNETWORKAL_WifiNetwork_GetRecvBufferSize;
         manager->setSendBufferSize = ARNETWORKAL_WifiNetwork_SetSendBufferSize;
         manager->getSendBufferSize = ARNETWORKAL_WifiNetwork_GetSendBufferSize;
+        manager->setRecvClassSelector = ARNETWORKAL_WifiNetwork_SetRecvClassSelector;
+        manager->getRecvClassSelector = ARNETWORKAL_WifiNetwork_GetRecvClassSelector;
+        manager->setSendClassSelector = ARNETWORKAL_WifiNetwork_SetSendClassSelector;
+        manager->getSendClassSelector = ARNETWORKAL_WifiNetwork_GetSendClassSelector;
     }
     else
     {
@@ -459,6 +463,78 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *
     else
     {
         error = manager->getRecvBufferSize(manager, bufferSize);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->setSendClassSelector == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->setSendClassSelector(manager, classSelector);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->setRecvClassSelector == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->setRecvClassSelector(manager, classSelector);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->getSendClassSelector == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->getSendClassSelector(manager, classSelector);
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+    if (manager == NULL)
+    {
+        error = ARNETWORKAL_ERROR_BAD_PARAMETER;
+    }
+    else if (manager->getRecvClassSelector == NULL)
+    {
+        error = ARNETWORKAL_ERROR_MANAGER_OPERATION_NOT_SUPPORTED;
+    }
+    else
+    {
+        error = manager->getRecvClassSelector(manager, classSelector);
     }
     return error;
 }

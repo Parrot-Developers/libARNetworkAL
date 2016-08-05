@@ -1028,6 +1028,66 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager
     return error;
 }
 
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_ERROR;
+    ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+	int cs = classSelector;
+	error = ARNETWORKAL_OK;
+	int err = ARSAL_Socket_Setsockopt (senderObject->socket, IPPROTO_IP, IP_TOS, &cs, sizeof(cs));
+	if (err != 0)
+	{
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error while setting recv socket class selector", manager);
+            error = ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT;
+	}
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector)
+{
+    eARNETWORKAL_ERROR error = ARNETWORKAL_ERROR;
+    ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+    int cs = classSelector;
+	error = ARNETWORKAL_OK;
+	int err = ARSAL_Socket_Setsockopt (receiverObject->socket, IPPROTO_IP, IP_TOS, &cs, sizeof(cs));
+	if (err != 0)
+	{
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "[%p] Error while setting recv socket class selector", manager);
+            error = ARNETWORKAL_ERROR_WIFI_SOCKET_SETOPT;
+	}
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector)
+{
+    if (classSelector == NULL) { return ARNETWORKAL_ERROR_BAD_PARAMETER; }
+    int cs = -1;
+    socklen_t size = sizeof(cs);
+    ARNETWORKAL_WifiNetworkObject *senderObject = (ARNETWORKAL_WifiNetworkObject *)manager->senderObject;
+    int err = ARSAL_Socket_Getsockopt (senderObject->socket, IPPROTO_IP, IP_TOS, &cs, &size);
+    eARNETWORKAL_ERROR error = (err == 0) ? ARNETWORKAL_OK : ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT;
+    if (err == 0)
+    {
+        *classSelector = cs;
+    }
+    return error;
+}
+
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector)
+{
+    if (classSelector == NULL) { return ARNETWORKAL_ERROR_BAD_PARAMETER; }
+    int cs = -1;
+    socklen_t size = sizeof(cs);
+    ARNETWORKAL_WifiNetworkObject *receiverObject = (ARNETWORKAL_WifiNetworkObject *)manager->receiverObject;
+    int err = ARSAL_Socket_Getsockopt (receiverObject->socket, IPPROTO_IP, IP_TOS, &cs, &size);
+    eARNETWORKAL_ERROR error = (err == 0) ? ARNETWORKAL_OK : ARNETWORKAL_ERROR_WIFI_SOCKET_GETOPT;
+    if (err == 0)
+    {
+        *classSelector = cs;
+    }
+    return error;
+}
+
 
 /*****************************************
  *

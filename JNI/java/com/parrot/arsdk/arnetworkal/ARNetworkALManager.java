@@ -35,6 +35,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
+import com.parrot.arsdk.arsal.ARSAL_SOCKET_CLASS_SELECTOR_ENUM;
 import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSALBLEManager;
 import com.parrot.mux.Mux;
@@ -69,6 +70,8 @@ public class ARNetworkALManager
 
     private native int nativeSetSendBufferSize(long jManager, int bufferSize);
     private native int nativeSetRecvBufferSize(long jManager, int bufferSize);
+    private native int nativeSetSendClassSelector(long jManager, int cs);
+    private native int nativeSetRecvClassSelector(long jManager, int cs);
 
     private native int nativeEnableDataDump(long jManager, String jLogDir, String jName);
     private native int nativeDumpData(long jManager, byte tag, long nativeData, int datasize, int dumpsize);
@@ -199,6 +202,28 @@ public class ARNetworkALManager
     {
         ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
         int intError = nativeSetRecvBufferSize(m_managerPtr, bufferSize);
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
+     * Sets the send class selector
+     */
+    public ARNETWORKAL_ERROR_ENUM setSendClassSelector(ARSAL_SOCKET_CLASS_SELECTOR_ENUM cs)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSetSendClassSelector(m_managerPtr, cs.getValue());
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
+     * Sets the recv class selector
+     */
+    public ARNETWORKAL_ERROR_ENUM setRecvClassSelector(ARSAL_SOCKET_CLASS_SELECTOR_ENUM cs)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSetRecvClassSelector(m_managerPtr, cs.getValue());
         error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }

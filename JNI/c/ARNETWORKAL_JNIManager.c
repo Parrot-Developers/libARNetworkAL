@@ -409,6 +409,38 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetRecvBufferSize(JNI
     return error;
 }
 
+/**
+ * @brief Sets the send class selector.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager address of the ARNETWORKAL_Manager_t
+ * @param cs The class selector to set
+ * @return error equal to ARNETWORKAL_OK if the set was successful otherwise see eARNETWORKAL_ERROR.
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetSendClassSelector(JNIEnv *env, jobject obj, jlong jManager, jint cs)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetSendClassSelector(manager, (int)cs);
+    return error;
+}
+
+/**
+ * @brief Sets the recv class selector.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager address of the ARNETWORKAL_Manager_t
+ * @param cs The class selector to set
+ * @return error equal to ARNETWORKAL_OK if the set was successful otherwise see eARNETWORKAL_ERROR.
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetRecvClassSelector(JNIEnv *env, jobject obj, jlong jManager, jint cs)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetRecvClassSelector(manager, (int)cs);
+    return error;
+}
+
 JNIEXPORT jint JNICALL
 Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeEnableDataDump(JNIEnv *env, jobject obj, jlong jManager, jstring jLogDir, jstring jName)
 {

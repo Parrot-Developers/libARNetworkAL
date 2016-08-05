@@ -186,4 +186,36 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendBufferSize(ARNETWORKAL_Manager
  */
 eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
 
+/**
+ * @brief Sets the class selector for the send socket
+ * @param manager pointer on the Manager
+ * @param classSelector class selector
+ * @return ARNETWORKAL_OK if the class selector was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector);
+
+/**
+ * @brief Sets the class selector for the receive socket
+ * @param manager pointer on the Manager
+ * @param classSelector class selector
+ * @return ARNETWORKAL_OK if the class selector was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_SetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector);
+
+/**
+ * @brief Gets the class selector for the send socket
+ * @param manager pointer on the Manager
+ * @param classSelector pointer on the class selector
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector);
+
+/**
+ * @brief Gets the class selector for the receive socket
+ * @param manager pointer on the Manager
+ * @param classSelector pointer on the class selector
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_GetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector);
+
 #endif /** _ARNETWORKAL_WIFINETWORK_PRIVATE_H_ */
