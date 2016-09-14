@@ -332,6 +332,52 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseBLENetwork(JNIEn
 }
 
 /**
+ * @brief initialize Mux network for sending and receiving the data.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManagerPtr address of the ARNETWORKAL_Manager_t
+ * @param[in] jMuxCtxPtr mux context.
+ * @return error equal to ARNETWORKAL_OK if the init was successful otherwise see eARNETWORKAL_ERROR.
+ **/
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeInitMuxNetwork(JNIEnv *env, jobject obj, jlong jManagerPtr, jlong jMuxCtxPtr)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
+    struct mux_ctx *mux_ctx = (struct mux_ctx*) (intptr_t) jMuxCtxPtr;
+
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    ARSAL_PRINT(ARSAL_PRINT_DEBUG, ARNETWORKAL_JNIMANAGER_TAG, " nativeInitMuxNetwork");
+
+    if(manager && mux_ctx)
+    {
+        error = ARNETWORKAL_Manager_InitMuxNetwork(manager, mux_ctx);
+    }
+
+    return error;
+}
+
+
+/**
+ * @brief Closes Mux network for sending and receiving the data.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManagerPtr address of the ARNETWORKAL_Manager_t
+ * @return error equal to ARNETWORKAL_OK if the close was successful otherwise see eARNETWORKAL_ERROR.
+ **/
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeCloseMuxNetwork(JNIEnv *env, jobject obj, jlong jManagerPtr)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t*) (intptr_t) jManagerPtr;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
+
+    error = ARNETWORKAL_Manager_CloseMuxNetwork(manager);
+
+    return error;
+}
+
+
+/**
  * @brief Sets the send bufer size.
  * @param env reference to the java environment
  * @param obj reference to the object calling this function
@@ -360,6 +406,38 @@ Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetRecvBufferSize(JNI
 {
     ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
     eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetRecvBufferSize(manager, (int)size);
+    return error;
+}
+
+/**
+ * @brief Sets the send class selector.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager address of the ARNETWORKAL_Manager_t
+ * @param cs The class selector to set
+ * @return error equal to ARNETWORKAL_OK if the set was successful otherwise see eARNETWORKAL_ERROR.
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetSendClassSelector(JNIEnv *env, jobject obj, jlong jManager, jint cs)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetSendClassSelector(manager, (int)cs);
+    return error;
+}
+
+/**
+ * @brief Sets the recv class selector.
+ * @param env reference to the java environment
+ * @param obj reference to the object calling this function
+ * @param jManager address of the ARNETWORKAL_Manager_t
+ * @param cs The class selector to set
+ * @return error equal to ARNETWORKAL_OK if the set was successful otherwise see eARNETWORKAL_ERROR.
+ */
+JNIEXPORT jint JNICALL
+Java_com_parrot_arsdk_arnetworkal_ARNetworkALManager_nativeSetRecvClassSelector(JNIEnv *env, jobject obj, jlong jManager, jint cs)
+{
+    ARNETWORKAL_Manager_t *manager = (ARNETWORKAL_Manager_t *) (intptr_t) jManager;
+    eARNETWORKAL_ERROR error = ARNETWORKAL_Manager_SetRecvClassSelector(manager, (int)cs);
     return error;
 }
 

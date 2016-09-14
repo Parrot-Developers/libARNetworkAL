@@ -35,8 +35,10 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
+import com.parrot.arsdk.arsal.ARSAL_SOCKET_CLASS_SELECTOR_ENUM;
 import com.parrot.arsdk.arsal.ARSALPrint;
 import com.parrot.arsdk.arsal.ARSALBLEManager;
+import com.parrot.mux.Mux;
 
 /**
  * Network manager allow to send and receive on network.
@@ -63,8 +65,13 @@ public class ARNetworkALManager
     private native int nativeCloseBLENetwork(long jManager);
     private native int nativeCancelBLENetwork(long jManager);
 
+    private native int nativeInitMuxNetwork(long jManager, long jMux);
+    private native int nativeCloseMuxNetwork(long jManager);
+
     private native int nativeSetSendBufferSize(long jManager, int bufferSize);
     private native int nativeSetRecvBufferSize(long jManager, int bufferSize);
+    private native int nativeSetSendClassSelector(long jManager, int cs);
+    private native int nativeSetRecvClassSelector(long jManager, int cs);
 
     private native int nativeEnableDataDump(long jManager, String jLogDir, String jName);
     private native int nativeDumpData(long jManager, byte tag, long nativeData, int datasize, int dumpsize);
@@ -200,6 +207,28 @@ public class ARNetworkALManager
     }
 
     /**
+     * Sets the send class selector
+     */
+    public ARNETWORKAL_ERROR_ENUM setSendClassSelector(ARSAL_SOCKET_CLASS_SELECTOR_ENUM cs)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSetSendClassSelector(m_managerPtr, cs.getValue());
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
+     * Sets the recv class selector
+     */
+    public ARNETWORKAL_ERROR_ENUM setRecvClassSelector(ARSAL_SOCKET_CLASS_SELECTOR_ENUM cs)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeSetRecvClassSelector(m_managerPtr, cs.getValue());
+        error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        return error;
+    }
+
+    /**
      * Enable data dump
      */
     public ARNETWORKAL_ERROR_ENUM enableDataDump(String logDir, String name)
@@ -318,6 +347,33 @@ public class ARNetworkALManager
             error = ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         }
         
+        return error;
+    }
+
+    /**
+     * Initialise Mux network
+     */
+    public ARNETWORKAL_ERROR_ENUM initMuxNetwork(Mux mux)
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        if(mux != null)
+        {
+            Mux.Ref muxref = mux.newMuxRef();
+            int intError = nativeInitMuxNetwork(m_managerPtr, muxref.getCPtr());
+            muxref.release();
+            error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
+        }
+        return error;
+    }
+
+    /**
+     * Close Mux network
+     */
+    public ARNETWORKAL_ERROR_ENUM closeMuxNetwork()
+    {
+        ARNETWORKAL_ERROR_ENUM error = ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_ERROR;
+        int intError = nativeCloseMuxNetwork(m_managerPtr);
+        error =  ARNETWORKAL_ERROR_ENUM.getFromValue(intError);
         return error;
     }
 

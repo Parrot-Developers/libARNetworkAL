@@ -42,6 +42,7 @@
 #include <time.h>
 #include <libARNetworkAL/ARNETWORKAL_Error.h>
 #include <libARNetworkAL/ARNETWORKAL_Frame.h>
+#include <libARSAL/ARSAL_Socket.h>
 
 #define ARNETWORKAL_MANAGER_DEFAULT_ID_MAX  256 /**< Default ID Max */
 #define ARNETWORKAL_MANAGER_WIFI_ID_MAX ARNETWORKAL_MANAGER_DEFAULT_ID_MAX /**< ID Max for WifiNetwork */
@@ -52,6 +53,9 @@
 #define ARNETWORKAL_BLENETWORK_MEDIA_MTU            20
 #define ARNETWORKAL_BLENETWORK_HEADER_SIZE          2
 #define ARNETWORKAL_BLENETWORK_MAX_BUFFER_SIZE      (ARNETWORKAL_BLENETWORK_MEDIA_MTU - ARNETWORKAL_BLENETWORK_HEADER_SIZE)
+
+/* Forward declarations */
+struct mux_ctx;
 
 /**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
@@ -191,6 +195,22 @@ typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_SetBufferSize_t) (ARNETWORKAL_M
 typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_GetBufferSize_t) (ARNETWORKAL_Manager_t *manager, int *bufferSize);
 
 /**
+ * @brief Sets a class selector
+ * @param manager The manager
+ * @param classSelector The requested class selector
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_SetClassSelector_t) (ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector);
+
+/**
+ * @brief Gets a class selector
+ * @param manager The manager
+ * @param classSelector Pointer which will hold the requested class selector
+ * @return error see ::eARNETWORKAL_ERROR
+ */
+typedef eARNETWORKAL_ERROR (*ARNETWORKAL_Manager_GetClassSelector_t) (ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector);
+
+/**
  * @brief ARNETWORKAL_Manager_t - Network abstraction structure.
  * @see ARNETWORKAL_Manager_PushNextFrame_t
  * @see ARNETWORKAL_Manager_PopNextFrame_t
@@ -211,6 +231,10 @@ struct ARNETWORKAL_Manager_t
     ARNETWORKAL_Manager_SetBufferSize_t setRecvBufferSize; /**< Manager specific set recv buffer size */
     ARNETWORKAL_Manager_GetBufferSize_t getSendBufferSize; /**< Manager specific get send buffer size */
     ARNETWORKAL_Manager_GetBufferSize_t getRecvBufferSize; /**< Manager specific get recv buffer size */
+    ARNETWORKAL_Manager_SetClassSelector_t setSendClassSelector; /**< Manager specific set send class selector */
+    ARNETWORKAL_Manager_SetClassSelector_t setRecvClassSelector; /**< Manager specific set recv class selector */
+    ARNETWORKAL_Manager_GetClassSelector_t getSendClassSelector; /**< Manager specific get send class selector */
+    ARNETWORKAL_Manager_GetClassSelector_t getRecvClassSelector; /**< Manager specific get recv class selector */
     void *senderObject; /**< Internal reference, do not use */
     void *receiverObject; /**< Internal reference, do not use */
     int maxIds; /**< Maximum supported buffer ID for ARNetwork */
@@ -317,6 +341,29 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelBLENetwork (ARNETWORKAL_Manager_t *
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseBLENetwork(ARNETWORKAL_Manager_t *manager);
 
+
+/**
+ * @brief initialize Mux network.
+ * @param manager pointer on the Manager
+ * @param[in] mux_ctx mux instance to use.
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_InitMuxNetwork(ARNETWORKAL_Manager_t *manager, struct mux_ctx *ctx);
+
+/**
+ * @brief Cancel the initialization of the Mux network.
+ * @param manager pointer on the Manager.
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful Canceled otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CancelMuxNetwork(ARNETWORKAL_Manager_t *manager);
+
+/**
+ * @brief close Mux network.
+ * @param manager pointer on the Manager
+ * @return error equal to ARNETWORKAL_OK if the initialization if successful otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_CloseMuxNetwork(ARNETWORKAL_Manager_t *manager);
+
 /**
  * @brief set the OnDisconnect Callback
  * @warning Only call by the ARNetworkManager
@@ -357,6 +404,38 @@ eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetSendBufferSize(ARNETWORKAL_Manager_t *
  * @return see ::eARNETWORKAL_ERROR
  */
 eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvBufferSize(ARNETWORKAL_Manager_t *manager, int *bufferSize);
+
+/**
+ * @brief Sets the class selector for the send socket
+ * @param manager pointer on the Manager
+ * @param classSelector class selector
+ * @return ARNETWORKAL_OK if the class selector was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector);
+
+/**
+ * @brief Sets the class selector for the receive socket
+ * @param manager pointer on the Manager
+ * @param classSelector class selector
+ * @return ARNETWORKAL_OK if the class selector was set, otherwise see eARNETWORKAL_ERROR.
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_SetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR classSelector);
+
+/**
+ * @brief Gets the class selector for the send socket
+ * @param manager pointer on the Manager
+ * @param classSelector pointer on the class selector
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetSendClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector);
+
+/**
+ * @brief Gets the class selector for the receive socket
+ * @param manager pointer on the Manager
+ * @param classSelector pointer on the class selector
+ * @return see ::eARNETWORKAL_ERROR
+ */
+eARNETWORKAL_ERROR ARNETWORKAL_Manager_GetRecvClassSelector(ARNETWORKAL_Manager_t *manager, eARSAL_SOCKET_CLASS_SELECTOR *classSelector);
 
 /**
  * @brief Enables dump of data pushed/sent/received/popped.

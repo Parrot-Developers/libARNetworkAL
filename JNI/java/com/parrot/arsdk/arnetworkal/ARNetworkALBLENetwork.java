@@ -152,12 +152,12 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
             SystemClock.sleep(BASIC_TEST_SLEEP);
-            
+
             BluetoothGatt gatt = bleManager.getGatt ();
-            
+
             if(gatt != null)
             {
-                List<BluetoothGattService> serviesArray = gatt.getServices();
+                List<BluetoothGattService> serviesArray = bleManager.getServices();
                 
                 if(serviesArray != null)
                 {
@@ -289,9 +289,8 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         
         if (result == ARNETWORKAL_ERROR_ENUM.ARNETWORKAL_OK)
         {
-            ARSAL_ERROR_ENUM resultSal = ARSAL_ERROR_ENUM.ARSAL_OK; 
-            BluetoothGatt gatt = bleManager.getGatt ();
-            List<BluetoothGattService> serviesArray = gatt.getServices();
+            ARSAL_ERROR_ENUM resultSal = ARSAL_ERROR_ENUM.ARSAL_OK;
+            List<BluetoothGattService> serviesArray = bleManager.getServices();
             
             for (int index=0; ((index < serviesArray.size()) && (resultSal == ARSAL_ERROR_ENUM.ARSAL_OK)); index++)
             {
