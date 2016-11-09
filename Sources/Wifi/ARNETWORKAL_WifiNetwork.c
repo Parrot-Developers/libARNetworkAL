@@ -555,7 +555,9 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
         /** set the socket timeout */
         timeout.tv_sec = timeoutSec;
         timeout.tv_nsec = 0;
-        ARSAL_Socket_Setsockopt (wifiReceiver->socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof (timeout));
+        err = ARSAL_Socket_Setsockopt (wifiReceiver->socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof (timeout));
+        if (err < 0)
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "ARSAL_Socket_Setsockopt() failed; err=%d", errno);
 
         /* set the socket non blocking */
         flags = fcntl(wifiReceiver->socket, F_GETFL, 0);
