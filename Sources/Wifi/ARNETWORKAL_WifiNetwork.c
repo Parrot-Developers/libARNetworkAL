@@ -518,7 +518,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
     struct timespec timeout;
     struct sockaddr_in recvSin;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
-    int errorBind = 0;
+    int err = 0;
     ARNETWORKAL_WifiNetworkObject *wifiReceiver = NULL;
     int flags = 0;
 
@@ -559,11 +559,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
 
         /* set the socket non blocking */
         flags = fcntl(wifiReceiver->socket, F_GETFL, 0);
-        fcntl(wifiReceiver->socket, F_SETFL, flags | O_NONBLOCK);
+        err = fcntl(wifiReceiver->socket, F_SETFL, flags | O_NONBLOCK);
+        if (err < 0)
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "fcntl() failed; err=%d", errno);
 
-        errorBind = ARSAL_Socket_Bind (wifiReceiver->socket, (struct sockaddr*)&recvSin, sizeof (recvSin));
-
-        if (errorBind !=0)
+        err = ARSAL_Socket_Bind (wifiReceiver->socket, (struct sockaddr*)&recvSin, sizeof (recvSin));
+        if (err < 0)
         {
             switch (errno)
             {
