@@ -439,7 +439,7 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
     struct sockaddr_in sendSin;
     eARNETWORKAL_ERROR error = ARNETWORKAL_OK;
     ARNETWORKAL_WifiNetworkObject *wifiSender = NULL;
-    int connectError;
+    int err;
 
     /** Check parameters */
     if((manager == NULL) || (manager->senderObject == NULL))
@@ -483,11 +483,12 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
         sendSin.sin_port = htons (port);
 
         int flags = fcntl(sockfd, F_GETFL, 0);
-        fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+        err = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+        if (err < 0)
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "fcntl() failed; err=%d", errno);
 
-        connectError = ARSAL_Socket_Connect (sockfd, (struct sockaddr*) &sendSin, sizeof (sendSin));
-
-        if (connectError != 0)
+        err = ARSAL_Socket_Connect (sockfd, (struct sockaddr*) &sendSin, sizeof (sendSin));
+        if (err < 0)
         {
             switch (errno)
             {
