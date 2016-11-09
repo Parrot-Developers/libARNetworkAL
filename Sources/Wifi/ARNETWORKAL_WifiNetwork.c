@@ -475,7 +475,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
         /* get the socket buffer size */
         int bufferSize;
         socklen_t size = sizeof (bufferSize);
-        ARSAL_Socket_Getsockopt (sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&bufferSize, &size);
+        err = ARSAL_Socket_Getsockopt (sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&bufferSize, &size);
+        if (err < 0)
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "ARSAL_Socket_Getsockopt() failed; err=%d", errno);
+
         wifiSender->socketBufferSize = bufferSize;
 
         sendSin.sin_addr.s_addr = inet_addr (addr);
