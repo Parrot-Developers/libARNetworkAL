@@ -900,7 +900,9 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
         {
             // If the fifo is ready for a read, dump bytes from it (so it won't be ready next time)
             char dump[10];
-            read (receiverObject->fifo[0], &dump, 10);
+            err = read (receiverObject->fifo[0], &dump, 10);
+            if (err < 0)
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "read() failed; err=%d", errno);
         }
     }
 
