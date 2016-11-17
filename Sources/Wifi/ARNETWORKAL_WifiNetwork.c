@@ -485,8 +485,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
         int bufferSize;
         socklen_t size = sizeof (bufferSize);
         err = ARSAL_Socket_Getsockopt (sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&bufferSize, &size);
-        if (err < 0)
-            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "ARSAL_Socket_Getsockopt() failed; err=%d", errno);
+        if (err < 0) {
+            err = errno;
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "ARSAL_Socket_Getsockopt() failed; err=%d", err);
+        }
 
         wifiSender->socketBufferSize = bufferSize;
 
@@ -496,8 +498,10 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Connect (ARNETWORKAL_Manager_t *manag
 
         int flags = fcntl(sockfd, F_GETFL, 0);
         err = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
-        if (err < 0)
+        if (err < 0) {
+            err = errno;
             ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "fcntl() failed; err=%d", errno);
+        }
 
         err = ARSAL_Socket_Connect (sockfd, (struct sockaddr*) &sendSin, sizeof (sendSin));
         if (err < 0)
@@ -566,14 +570,18 @@ eARNETWORKAL_ERROR ARNETWORKAL_WifiNetwork_Bind (ARNETWORKAL_Manager_t *manager,
         timeout.tv_sec = timeoutSec;
         timeout.tv_nsec = 0;
         err = ARSAL_Socket_Setsockopt (wifiReceiver->socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof (timeout));
-        if (err < 0)
-            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "ARSAL_Socket_Setsockopt() failed; err=%d", errno);
+        if (err < 0) {
+            err = errno;
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "ARSAL_Socket_Setsockopt() failed; err=%d", err);
+        }
 
         /* set the socket non blocking */
         flags = fcntl(wifiReceiver->socket, F_GETFL, 0);
         err = fcntl(wifiReceiver->socket, F_SETFL, flags | O_NONBLOCK);
-        if (err < 0)
-            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "fcntl() failed; err=%d", errno);
+        if (err < 0) {
+            err = errno;
+            ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "fcntl() failed; err=%d", err);
+        }
 
         err = ARSAL_Socket_Bind (wifiReceiver->socket, (struct sockaddr*)&recvSin, sizeof (recvSin));
         if (err < 0)
@@ -921,8 +929,10 @@ eARNETWORKAL_MANAGER_RETURN ARNETWORKAL_WifiNetwork_Receive(ARNETWORKAL_Manager_
             // If the fifo is ready for a read, dump bytes from it (so it won't be ready next time)
             char dump[10];
             err = read (receiverObject->fifo[0], &dump, 10);
-            if (err < 0)
-                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "read() failed; err=%d", errno);
+            if (err < 0) {
+                err = errno;
+                ARSAL_PRINT(ARSAL_PRINT_ERROR, ARNETWORKAL_WIFINETWORK_TAG, "read() failed; err=%d", err);
+            }
         }
     }
 
