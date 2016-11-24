@@ -84,7 +84,7 @@ JNI_OnLoad(JavaVM *VM, void *reserved)
     /** Saving the reference to the java virtual machine */
     ARNETWORKAL_JNIManager_VM = VM;
 
-    ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_JNIMANAGER_TAG, "JNI_OnLoad ARNETWORKAL_JNIManager_VM: %d ", ARNETWORKAL_JNIManager_VM);
+    ARSAL_PRINT(ARSAL_PRINT_WARNING, ARNETWORKAL_JNIMANAGER_TAG, "JNI_OnLoad ARNETWORKAL_JNIManager_VM: %p ", ARNETWORKAL_JNIManager_VM);
 
     /** Return the JNI version */
     return JNI_VERSION_1_6;
