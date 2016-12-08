@@ -72,7 +72,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     private native static int nativeGetMediaMTU ();
     private native static int nativeGetHeaderSize();
     
-    private native static void nativeJNIOnDisconect (int jniARNetworkALBLENetwork);
+    private native static void nativeJNIOnDisconect (long jniARNetworkALBLENetwork);
     private ARSALBLEManager bleManager;
     
     private BluetoothDevice deviceBLEService;
@@ -90,7 +90,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
     private int bwCurrentUp;
     private int bwCurrentDown;
     
-    private int jniARNetworkALBLENetwork;
+    private long jniARNetworkALBLENetwork;
     
     static
     {
@@ -99,7 +99,7 @@ public class ARNetworkALBLENetwork implements ARSALBLEManagerListener
         nativeJNIInit();
     }
     
-    public ARNetworkALBLENetwork (int jniARNetworkALBLENetwork, Context context)
+    public ARNetworkALBLENetwork (long jniARNetworkALBLENetwork, Context context)
     {
         this.bleManager = ARSALBLEManager.getInstance(context);
         this.recvArray = new ArrayList<ARSALManagerNotificationData>();
