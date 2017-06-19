@@ -177,7 +177,7 @@
     }
 
     //discover all characteristics related to known services
-    for(int i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
+    for(NSUInteger i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
     {
         CBService *service = [[peripheral services] objectAtIndex:i];
         //NSLog(@"Service : %@, %04x", [service.UUID shortUUID], (unsigned int)service.UUID);
@@ -193,7 +193,7 @@
 
     if(result == ARNETWORKAL_OK)
     {
-        for(int i = 0 ; (i < [[peripheral services] count]) && ((senderService == nil) || (receiverService == nil)) && (result == ARNETWORKAL_OK) ; i++)
+        for(NSUInteger i = 0 ; (i < [[peripheral services] count]) && ((senderService == nil) || (receiverService == nil)) && (result == ARNETWORKAL_OK) ; i++)
         {
             CBService *service = [[peripheral services] objectAtIndex:i];
             NSLog(@"Service : %@, %@, %04x", [service.UUID representativeString], [service.UUID shortUUID], (unsigned int)service.UUID);
@@ -320,13 +320,13 @@
         [SINGLETON_FOR_CLASS(ARSAL_BLEManager) registerNotificationCharacteristics:_recvNotificationCharacteristicArray toKey:kARNETWORKAL_BLENetwork_NotificationRecv];
     }
 
-    for(int i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
+    for(NSUInteger i = 0 ; (i < [[peripheral services] count]) && (result == ARNETWORKAL_OK) ; i++)
     {
         CBService *service = [[peripheral services] objectAtIndex:i];
         //NSLog(@"Service : %@, %04x", [service.UUID shortUUID], (unsigned int)service.UUID);
         if([[service.UUID shortUUID] hasPrefix:ARNETWORKAL_BLENETWORK_PARROT_SERVICE_PREFIX_UUID])
         {
-            for(int j = 0 ; (j < [[service characteristics] count]) && (result == ARNETWORKAL_OK) ; j++)
+            for(NSUInteger j = 0 ; (j < [[service characteristics] count]) && (result == ARNETWORKAL_OK) ; j++)
             {
                 CBCharacteristic *characteristic = [[service characteristics] objectAtIndex:j];
                 //NSLog(@"Characteristic : %@, %04x", [characteristic.UUID shortUUID], (unsigned int)characteristic.UUID);
